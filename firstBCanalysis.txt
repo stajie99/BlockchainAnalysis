@@ -1,0 +1,9 @@
+set ETH_RPC_URL=https://ethereum-mainnet.core.chainstack.com/36d94383e5200effe4a966a88f74e598
+cryo blocks --blocks 18734075:18735075 --dry
+
+cryo blocks ^
+    --blocks 18734975:18735075 ^
+    --json ^
+    --requests-per-second 30 ^
+    --columns block_number block_hash timestamp chain_id ^
+    --dry
