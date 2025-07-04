@@ -1,6 +1,20 @@
-print("Hello, this is PyBCanalysis!")
-import sys
-from math import cos, radians
+# print("Hello, this is PyBCanalysis!")
+# import sys
+# from math import cos, radians
 
-for i in range(360):
-    print(cos(radians(i)))
+# for i in range(360):
+#     print(cos(radians(i)))
+
+set ETH_RPC_URL=https://ethereum-mainnet.core.chainstack.com/36d94383e5200effe4a966a88f74e598
+
+cryo blocks --blocks 18734075:18735075 --dry
+
+cryo blocks ^
+    --blocks 18734975:18735075 ^
+    --csv ^
+    --requests-per-second 30 ^
+    --columns block_number block_hash timestamp chain_id ^
+    --dry
+
+
+cryo erc20_transfers --blocks latest --json
