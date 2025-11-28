@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 # load event data - csv
 df_events = pd.read_csv('./ERC20-stablecoins/event_data.csv', encoding='iso-8859-1')
 print(df_events.head(10))
+print(df_events.info())
 
 # The timestamp e.g. 1660176000 is a Unix timestamp (also called Epoch time),
 # convert timestamp column to datetime
@@ -27,7 +28,7 @@ df_price_usdt['stablecoin'] = 'usdt'
 df_price_ustc = pd.read_csv('./ERC20-stablecoins/price_data/ustc_price_data.csv')
 df_price_ustc['stablecoin'] = 'ustc'
 
-df_price_wluna = pd.read_csv('./ERC20-stablecoins/price_data/pax_price_data.csv')
+df_price_wluna = pd.read_csv('./ERC20-stablecoins/price_data/wluna_price_data.csv')
 df_price_wluna['stablecoin'] = 'wluna'
 
 # stack vertically
@@ -47,14 +48,15 @@ for coin in df_price['stablecoin'].unique():
     coin_data = df_price[df_price['stablecoin'] == coin]
     plt.plot(coin_data['datetime'], coin_data['close'], label=coin)
 
-plt.title('All Stablecoin Prices Over Time')
+plt.title('Daily Close Prices of Stablecoins and WLUNA')
 plt.xlabel('Date')
-plt.ylabel('Close Price')
+plt.ylabel('Close Price (USD)')
 plt.legend()
 plt.grid(True)
 plt.xticks(rotation=45)
-# plt.tight_layout()
-plt.ylim(0.99, 1.01)
+plt.tight_layout()
+plt.yscale('log') # Use log scale to visualize both stable coins and the collapse of WLUNA/USTC
+plt.ylim(1e-4, 150) # Set reasonable limits for log scale
 plt.show()
 
 
