@@ -124,7 +124,7 @@ plt.ylim(0.99, 1.01)
 plt.show()
 
 # Event annotations on price chart
-from adjustText import adjust_text
+# from adjustText import adjust_text
 fig, ax = plt.subplots(figsize=(14, 8))
 
 # Plot price data
@@ -132,24 +132,19 @@ for coin in df_price['stablecoin'].unique():
     coin_data = df_price[df_price['stablecoin'] == coin]
     ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
 
-# First plot all annotations without adjustments
-texts = []
-y_min, y_max = ax.get_ylim()
-
+# Add event annotations with text
 for i, event in df_events.iterrows():
+    # Find price at event date for positioning
     event_date = event['datetime']
-    y_pos = y_max - 0.001  # Start all at same height
+    # Get approximate y position (you might need to adjust this)
+    y_pos = ax.get_ylim()[1] - 0.001 * (i % 3)  # Stagger labels
     
-    text = ax.annotate(event['event'][:30] + "...",
-                      xy=(event_date, y_pos),
-                      xytext=(10, 30), textcoords='offset points',
-                      arrowprops=dict(arrowstyle='->', color='red', alpha=0.7),
-                      bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.3),
-                      fontsize=8, ha='left')
-    texts.append(text)
-
-# Automatically adjust text positions to avoid overlaps
-adjust_text(texts, arrowprops=dict(arrowstyle='->', color='red', alpha=0.7))
+    ax.annotate(event['event'][:30] + "...",  # Truncate long text
+               xy=(event_date, y_pos),
+               xytext=(10, 30), textcoords='offset points',
+               arrowprops=dict(arrowstyle='->', color='red', alpha=0.7),
+               bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.3),
+               fontsize=8, ha='left', rotation = 30)
 
 ax.set_title('Stablecoin Prices with Event Annotations')
 ax.set_xlabel('Date')
@@ -158,7 +153,7 @@ ax.legend()
 ax.grid(True, alpha=0.3)
 plt.xticks(rotation=45)
 plt.tight_layout()
-plt.ylim(0.7, 1.01)
+plt.ylim(0.7, 1.2)
 plt.show()
 
 # Event table + Price chart combination

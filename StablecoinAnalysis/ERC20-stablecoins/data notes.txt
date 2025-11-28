@@ -1,0 +1,9 @@
+The event_data.csv dataset contains the following columns:
+
+event: Text description of the event.
+
+timestamp: Unix timestamp (which I will convert to a human-readable date).
+
+type: The sentiment of the event (positive or negative).
+
+stablecoin: The stablecoin associated with the event (e.g., 'usdc', 'ustc', 'dai').
