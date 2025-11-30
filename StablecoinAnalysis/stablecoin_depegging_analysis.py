@@ -46,7 +46,7 @@ plt.figure(figsize=(12, 6))
 
 for coin in df_price['stablecoin'].unique():
     coin_data = df_price[df_price['stablecoin'] == coin]
-    plt.plot(coin_data['datetime'], coin_data['close'], label=coin)
+    plt.plot(coin_data['datetime'], coin_data['close'], label=coin.upper())
 
 plt.title('Daily Close Prices of Stablecoins and WLUNA')
 plt.xlabel('Date')
@@ -56,30 +56,30 @@ plt.grid(True)
 plt.xticks(rotation=45)
 plt.tight_layout()
 plt.yscale('log') # Use log scale to visualize both stable coins and the collapse of WLUNA/USTC
-plt.ylim(1e-4, 150) # Set reasonable limits for log scale
+# plt.ylim(1e-5, 150) # Set reasonable limits for log scale
 plt.show()
 
 
-# Subplots for each stablecoin
-stablecoins = df_price['stablecoin'].unique()
-fig, axes = plt.subplots(len(stablecoins), 1, figsize=(12, 4*len(stablecoins)))
+# # Subplots for each stablecoin
+# stablecoins = df_price['stablecoin'].unique()
+# fig, axes = plt.subplots(len(stablecoins), 1, figsize=(12, 4*len(stablecoins)))
 
-if len(stablecoins) == 1:
-    axes = [axes]
+# if len(stablecoins) == 1:
+#     axes = [axes]
 
-for i, coin in enumerate(stablecoins):
-    coin_data = df_price[df_price['stablecoin'] == coin]
-    axes[i].plot(coin_data['datetime'], coin_data['close'])
-    axes[i].set_title(f'{coin.upper()} Price')
-    axes[i].set_ylabel('Price')
-    axes[i].grid(True)
-    # axes[i].tick_params(axis='x', rotation=45)
+# for i, coin in enumerate(stablecoins):
+#     coin_data = df_price[df_price['stablecoin'] == coin]
+#     axes[i].plot(coin_data['datetime'], coin_data['close'])
+#     axes[i].set_title(f'{coin.upper()} Price')
+#     axes[i].set_ylabel('Price')
+#     axes[i].grid(True)
+#     # axes[i].tick_params(axis='x', rotation=45)
 
-plt.xlabel('Date')
-plt.tight_layout()
-plt.show()
+# plt.xlabel('Date')
+# plt.tight_layout()
+# plt.show()
 
-# Price range visulization (the best)
+# Multiple stablecoins (with price ranges) comparison 
 plt.figure(figsize=(12, 6))
 
 for coin in df_price['stablecoin'].unique():
@@ -98,12 +98,34 @@ plt.legend()
 plt.grid(True)
 plt.xticks(rotation=45)
 plt.tight_layout()
+plt.yscale('log')
+plt.show()
+
+
+# Volatility and Risk Analysis (Daily Range)
+# Calculate Daily Range (High - Low) for each coin
+
+plt.figure(figsize=(12, 6))
+
+for coin in df_price['stablecoin'].unique():
+    coin_data = df_price[df_price['stablecoin'] == coin]
+    plt.plot(coin_data['datetime'], coin_data['high'] - coin_data['low'], 
+            label=f'{coin.upper()}', linewidth=1)
+
+plt.title('Daily Intraday Volatility (High - Low)')
+plt.xlabel('Date')
+plt.ylabel('Daily Price Range (USD)')
+plt.legend()
+plt.grid(True)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.yscale('log')
 plt.show()
 
 # ###########################################
 # Event timeline with vertical lines (overlay on price chart)
 fig, ax = plt.subplots(figsize=(14, 8))
-
+import math
 # Plot price data first
 for coin in df_price['stablecoin'].unique():
     coin_data = df_price[df_price['stablecoin'] == coin]
@@ -112,8 +134,10 @@ for coin in df_price['stablecoin'].unique():
 # Add event vertical lines
 for i, event in df_events.iterrows():
     ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.7)
-    ax.text(event['datetime'], ax.get_ylim()[1], f"Event {i+1}", 
-            rotation=90, verticalalignment='top', fontsize=8)
+    ax.text(event['datetime'], 
+            (ax.get_ylim()[1] - i * (ax.get_ylim()[1] - ax.get_ylim()[0]) / df_events.shape[0]),
+            f"Event {i+1}", 
+            rotation=90, fontsize=8)
 
 ax.set_title('Stablecoin Prices with Events')
 ax.set_xlabel('Date')
@@ -122,8 +146,11 @@ ax.legend()
 ax.grid(True, alpha=0.3)
 plt.xticks(rotation=45)
 plt.tight_layout()
-plt.ylim(0.99, 1.01)
+plt.yscale('log')
 plt.show()
+
+
+
 
 # Event annotations on price chart
 # from adjustText import adjust_text
@@ -155,7 +182,7 @@ ax.legend()
 ax.grid(True, alpha=0.3)
 plt.xticks(rotation=45)
 plt.tight_layout()
-plt.ylim(0.7, 1.2)
+# plt.ylim(0.7, 1.2)
 plt.show()
 
 # Event table + Price chart combination
