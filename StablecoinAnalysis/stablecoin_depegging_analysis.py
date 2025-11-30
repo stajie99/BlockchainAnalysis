@@ -133,7 +133,7 @@ for coin in df_price['stablecoin'].unique():
 
 # Add event vertical lines
 for i, event in df_events.iterrows():
-    print(i)
+    # print(i)
     ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
     ax.text(event['datetime'], 
             10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
@@ -152,36 +152,30 @@ plt.show()
 
 
 
+fig, ax = plt.subplots(figsize=(14, 8))
+import math
+# Plot price data first
+for coin in df_price['stablecoin'].unique():
+    coin_data = df_price[df_price['stablecoin'] == coin]
+    ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
 
-# # Event annotations on price chart
-# # from adjustText import adjust_text
-# fig, ax = plt.subplots(figsize=(14, 8))
+# Add event vertical lines
+for i, event in df_events.iterrows():
+    # print(i)
+    ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
+    ax.text(event['datetime'], 
+            10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
+            f"$\mathbf{{Event\ {i+1}}}$: {event['type']}", 
+            rotation=0, fontsize=7)
 
-# # Plot price data
-# for coin in df_price['stablecoin'].unique():
-#     coin_data = df_price[df_price['stablecoin'] == coin]
-#     ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
+ax.set_title('Prices of Stablecoins and WLUNA with Events')
+ax.set_xlabel('Date')
+ax.set_ylabel('Price (USD)')
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.yscale('log')
+plt.show()
 
-# # Add event annotations with text
-# for i, event in df_events.iterrows():
-#     # Find price at event date for positioning
-#     event_date = event['datetime']
-#     # Get approximate y position (you might need to adjust this)
-#     y_pos = ax.get_ylim()[1] - 0.001 * (i % 3)  # Stagger labels
-    
-#     ax.annotate(event['event'][:30] + "...",  # Truncate long text
-#                xy=(event_date, y_pos),
-#                xytext=(10, 30), textcoords='offset points',
-#                arrowprops=dict(arrowstyle='->', color='red', alpha=0.7),
-#                bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.3),
-#                fontsize=8, ha='left', rotation = 30)
 
-# ax.set_title('Stablecoin Prices with Event Annotations')
-# ax.set_xlabel('Date')
-# ax.set_ylabel('Price')
-# ax.legend()
-# ax.grid(True, alpha=0.3)
-# plt.xticks(rotation=45)
-# plt.tight_layout()
-# # plt.ylim(0.7, 1.2)
-# plt.show()
