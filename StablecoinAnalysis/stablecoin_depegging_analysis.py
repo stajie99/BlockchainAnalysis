@@ -200,3 +200,121 @@ plt.yticks(rotation=0)
 plt.tight_layout()
 plt.show()
 
+
+
+
+
+# Random Forest Model
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+
+# --- Data Preparation ---
+
+# # Load and process USDT price data
+# usdt_price_df = pd.read_csv('usdt_price_data.csv')
+# usdt_price_df['timestamp'] = pd.to_datetime(usdt_price_df['timestamp'], unit='s').dt.date
+# usdt_price_df = usdt_price_df.set_index('timestamp')
+
+# # Load and process event data
+# event_df = pd.read_csv('event_data.csv')
+# event_df['timestamp'] = pd.to_datetime(event_df['timestamp'], unit='s').dt.date
+
+# Feature Engineering: Count all positive/negative events for all stablecoins
+daily_events = df_events.groupby(['datetime', 'stablecoin'])['type'].value_counts().unstack(fill_value=0)
+event_features = daily_events.unstack(level='stablecoin').fillna(0)
+event_features.columns = [f'{sc}_events_{t}' for t, sc in event_features.columns]
+
+# Merge data and create lagged price feature
+merged_df = df_price_usdt.merge(event_features, left_index=True, right_index=True, how='left')
+merged_df = merged_df.fillna(0)
+merged_df['prev_close'] = merged_df['close'].shift(1)
+merged_df.dropna(inplace=True)
+
+# --- Model Training and Evaluation ---
+
+# Define features (X) and target (y)
+features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col]
+target = 'close'
+
+X = merged_df[features]
+y = merged_df[target]
+
+# Split data: 80% train, 20% test (preserving time order: shuffle=False)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+
+# Train Random Forest Regressor
+model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+model.fit(X_train, y_train)
+
+# Make predictions and evaluate
+y_pred = model.predict(X_test)
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+# Extract Feature Importance
+feature_importance = pd.Series(model.feature_importances_, index=features).sort_values(ascending=False)
+
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"R-squared (R2): {r2}")
+print("Feature Importance:\n", feature_importance)
+
+
+# visualiza the results
+# Create a DataFrame for plotting
+results_df = pd.DataFrame({
+    'Actual Close': y_test,
+    'Predicted Close': y_pred
+})
+
+# Plotting the results
+plt.figure(figsize=(12, 6))
+plt.plot(results_df.index, results_df['Actual Close'], label='Actual Close Price', color='blue', linewidth=2)
+plt.plot(results_df.index, results_df['Predicted Close'], label='Predicted Close Price', color='red', linestyle='--', linewidth=1)
+plt.title('Random Forest Model Prediction vs. Actual USDT Close Price (Test Set)')
+plt.xlabel('Date')
+plt.ylabel('USDT Price (USD)')
+plt.legend()
+plt.xticks(rotation=45)
+plt.grid(True, linestyle=':', alpha=0.6)
+plt.tight_layout()
+plt.show()
+
+
+
+#  Predict wluna price
+# --- Data Preparation ---
+
+# Feature Engineering: Count all positive/negative events for all stablecoins
+daily_events = df_events.groupby(['datetime', 'stablecoin'])['type'].value_counts().unstack(fill_value=0)
+event_features = daily_events.unstack(level='stablecoin').fillna(0)
+event_features.columns = [f'{sc}_events_{t}' for t, sc in event_features.columns]
+
+# Merge data and create lagged price feature
+merged_df = df_price_wluna.merge(event_features, left_index=True, right_index=True, how='left')
+merged_df = merged_df.fillna(0)
+merged_df['prev_close'] = merged_df['close'].shift(1)
+merged_df.dropna(inplace=True)
+
+# --- Model Training and Evaluation ---
+features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col]
+target = 'close'
+
+X = merged_df[features]
+y = merged_df[target]
+
+# Split data: 80% train, 20% test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False, random_state=42)
+
+# Train Random Forest Regressor
+model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+model.fit(X_train, y_train)
+
+# Evaluate metrics and feature importance
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+feature_importance = pd.Series(model.feature_importances_, index=features)
+
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"R-squared (R2): {r2}")
+print("Feature Importance:\n", feature_importance)
