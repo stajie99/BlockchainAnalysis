@@ -168,7 +168,7 @@ for i, event in df_events.iterrows():
             f"$\mathbf{{Event\ {i+1}}}$: {event['type']}", 
             rotation=0, fontsize=7)
 
-ax.set_title('Prices of Stablecoins and WLUNA with Events')
+ax.set_title('Prices of Stablecoins and WLUNA with Event Sentiment')
 ax.set_xlabel('Date')
 ax.set_ylabel('Price (USD)')
 ax.legend()
@@ -178,4 +178,25 @@ plt.tight_layout()
 plt.yscale('log')
 plt.show()
 
+
+
+
+# Correlation analysis
+import seaborn as sns
+# 1. Pivot the data to get stablecoins as columns and date as index
+pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close')
+
+# 2. Calculate the correlation matrix
+corr_matrix = pivot_df.corr(method='pearson')
+
+# 3. Generate a heatmap of the correlation matrix
+plt.figure(figsize=(10, 8))
+sns.heatmap(corr_matrix, annot=True, fmt=".4f", cmap='coolwarm',
+            cbar_kws={'label': 'Pearson Correlation Coefficient (ρ)'},
+            linewidths=.5, linecolor='black')
+plt.title('Correlation Matrix of Stablecoin/Asset Daily Close Prices')
+plt.xticks(rotation=45, ha='right')
+plt.yticks(rotation=0)
+plt.tight_layout()
+plt.show()
 
