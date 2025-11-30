@@ -91,9 +91,9 @@ for coin in df_price['stablecoin'].unique():
     plt.plot(coin_data['datetime'], coin_data['close'], 
             label=f'{coin} close', linewidth=2)
 
-plt.title('Stablecoin Price Ranges')
+plt.title('Daily Prices of Stablecoins and WLUNA')
 plt.xlabel('Date')
-plt.ylabel('Price')
+plt.ylabel('Price (USD)')
 plt.legend()
 plt.grid(True)
 plt.xticks(rotation=45)
@@ -133,15 +133,16 @@ for coin in df_price['stablecoin'].unique():
 
 # Add event vertical lines
 for i, event in df_events.iterrows():
-    ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.7)
+    print(i)
+    ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
     ax.text(event['datetime'], 
-            (ax.get_ylim()[1] - i * (ax.get_ylim()[1] - ax.get_ylim()[0]) / df_events.shape[0]),
-            f"Event {i+1}", 
-            rotation=90, fontsize=8)
+            10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
+            f"$\mathbf{{Event\ {i+1}}}$: {event['event'][:30] + "..."}", 
+            rotation=0, fontsize=7)
 
-ax.set_title('Stablecoin Prices with Events')
+ax.set_title('Prices of Stablecoins and WLUNA with Events')
 ax.set_xlabel('Date')
-ax.set_ylabel('Price')
+ax.set_ylabel('Price (USD)')
 ax.legend()
 ax.grid(True, alpha=0.3)
 plt.xticks(rotation=45)
@@ -152,48 +153,49 @@ plt.show()
 
 
 
-# Event annotations on price chart
-# from adjustText import adjust_text
-fig, ax = plt.subplots(figsize=(14, 8))
+# # Event annotations on price chart
+# # from adjustText import adjust_text
+# fig, ax = plt.subplots(figsize=(14, 8))
 
-# Plot price data
-for coin in df_price['stablecoin'].unique():
-    coin_data = df_price[df_price['stablecoin'] == coin]
-    ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
+# # Plot price data
+# for coin in df_price['stablecoin'].unique():
+#     coin_data = df_price[df_price['stablecoin'] == coin]
+#     ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
 
-# Add event annotations with text
-for i, event in df_events.iterrows():
-    # Find price at event date for positioning
-    event_date = event['datetime']
-    # Get approximate y position (you might need to adjust this)
-    y_pos = ax.get_ylim()[1] - 0.001 * (i % 3)  # Stagger labels
+# # Add event annotations with text
+# for i, event in df_events.iterrows():
+#     # Find price at event date for positioning
+#     event_date = event['datetime']
+#     # Get approximate y position (you might need to adjust this)
+#     y_pos = ax.get_ylim()[1] - 0.001 * (i % 3)  # Stagger labels
     
-    ax.annotate(event['event'][:30] + "...",  # Truncate long text
-               xy=(event_date, y_pos),
-               xytext=(10, 30), textcoords='offset points',
-               arrowprops=dict(arrowstyle='->', color='red', alpha=0.7),
-               bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.3),
-               fontsize=8, ha='left', rotation = 30)
+#     ax.annotate(event['event'][:30] + "...",  # Truncate long text
+#                xy=(event_date, y_pos),
+#                xytext=(10, 30), textcoords='offset points',
+#                arrowprops=dict(arrowstyle='->', color='red', alpha=0.7),
+#                bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.3),
+#                fontsize=8, ha='left', rotation = 30)
 
-ax.set_title('Stablecoin Prices with Event Annotations')
-ax.set_xlabel('Date')
-ax.set_ylabel('Price')
-ax.legend()
-ax.grid(True, alpha=0.3)
-plt.xticks(rotation=45)
-plt.tight_layout()
-# plt.ylim(0.7, 1.2)
-plt.show()
+# ax.set_title('Stablecoin Prices with Event Annotations')
+# ax.set_xlabel('Date')
+# ax.set_ylabel('Price')
+# ax.legend()
+# ax.grid(True, alpha=0.3)
+# plt.xticks(rotation=45)
+# plt.tight_layout()
+# # plt.ylim(0.7, 1.2)
+# plt.show()
 
 # Event table + Price chart combination
 
 from matplotlib.gridspec import GridSpec
 
 fig = plt.figure(figsize=(16, 10))
-gs = GridSpec(2, 1, height_ratios=[3, 1], figure=fig)
+gs = GridSpec(2, 1, height_ratios=[1, 1], figure=fig)
 
 # Top subplot: Price chart
 ax1 = fig.add_subplot(gs[0])
+# Plot price data first
 for coin in df_price['stablecoin'].unique():
     coin_data = df_price[df_price['stablecoin'] == coin]
     ax1.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
@@ -201,11 +203,19 @@ for coin in df_price['stablecoin'].unique():
 # Add event vertical lines
 for i, event in df_events.iterrows():
     ax1.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
-
-ax1.set_title('Stablecoin Prices with Events')
-ax1.set_ylabel('Price')
+    ax1.text(event['datetime'], 
+            10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
+            f"$\mathbf{{Event\ {i+1}}}$: {event['event'][:30] + "..."}", 
+            rotation=0, fontsize=7)
+    
+ax1.set_title('Prices of Stablecoins and WLUNA with Events')
+ax1.set_xlabel('Date')
+ax1.set_ylabel('Price (USD)')
 ax1.legend()
 ax1.grid(True, alpha=0.3)
+ax1.xticks(rotation=45)
+plt.yscale('log')
+
 
 # Bottom subplot: Event table
 ax2 = fig.add_subplot(gs[1])
@@ -214,7 +224,7 @@ ax2.axis('off')
 
 # Create table data
 table_data = []
-for i, event in df_events.iterrows():
+for i, event in df_events[0:10].iterrows():
     table_data.append([event['datetime'].strftime('%Y-%m-%d'), event['event'][:50] + "..."])
 
 table = ax2.table(cellText=table_data,
