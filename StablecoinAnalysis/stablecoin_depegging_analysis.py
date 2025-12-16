@@ -1,6 +1,9 @@
 import pandas as pd
 from datetime import datetime, timezone
 import matplotlib.pyplot as plt
+
+############# Part 1. Data Loading
+#############
 # load event data - csv
 df_events = pd.read_csv('./ERC20-stablecoins/event_data.csv', encoding='iso-8859-1')
 print(df_events.head(10))
@@ -38,8 +41,12 @@ df_price['datetime'] = pd.to_datetime(df_price['timestamp'], unit='s')
 df_price = df_price.drop('timestamp', axis=1)
 print(df_price)
 
-
 df_price = df_price.sort_values('datetime') # ensure chronological order
+
+############# Part 2. Simple Data Analysis
+#############
+print(df_events['type'].value_counts())
+print(df_events[['stablecoin','type']].value_counts())
 
 # Multiple stablecoins comparison
 plt.figure(figsize=(12, 6))
