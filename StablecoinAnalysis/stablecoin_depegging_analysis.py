@@ -48,6 +48,51 @@ df_price = df_price.sort_values('datetime') # ensure chronological order
 print(df_events['type'].value_counts())
 print(df_events[['stablecoin','type']].value_counts())
 
+# Convert to unstacked df
+df = df_events[['stablecoin','type']].value_counts().unstack(fill_value=0)
+# Create grouped bar chart
+# plt.figure(figsize=(12, 6))
+df.plot(kind='bar', color=['red', 'green'])
+plt.title('Grouped Bar Chart', fontsize=14)
+plt.xlabel('Stablecoin Type')
+plt.ylabel('Count')
+plt.legend(title='Sentiment')
+plt.tick_params(axis='x', rotation=45)
+plt.show()
+
+# Time Series Plot (Line Chart) of event frequency (e.g., events per week or month) 
+df['week'] = df['date'].dt.to_period('W').dt.start_time
+temporal_data = df.groupby(['week', 'type']).size().reset_index(name='count')
+temporal_data['week'] = temporal_data['week'].astype(str)  
+# Convert Period to string for Altair
+#  Create the time series chart
+temporal_chart = alt.Chart(temporal_data).mark_line().encode(
+    x=alt.X('week', title='Date (Start of Week)'),
+    y=alt.Y('count', title='Number of Events'),
+    color=alt.Color('type', scale=alt.Scale(domain=['positive', 'negative'], range=['34A853', 'EA4335']), legend=alt.Legend(title="Event Type")),
+    tooltip=['week', 'type', 'count']
+).properties(
+    title='Event Frequency Over Time (Aggregated by Week)'
+)
+temporal_chart.save('event_frequency_over_time.json')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Multiple stablecoins comparison
 plt.figure(figsize=(12, 6))
 
