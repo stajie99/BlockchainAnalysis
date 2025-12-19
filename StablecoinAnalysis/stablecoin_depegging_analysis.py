@@ -44,201 +44,201 @@ print(df_price)
 
 df_price = df_price.sort_values('datetime') # ensure chronological order
 
-############# Part 2. Simple Data Analysis
-#############
-print(df_events['type'].value_counts())
-print(df_events[['stablecoin','type']].value_counts())
+# ############# Part 2. Simple Data Analysis
+# #############
+# print(df_events['type'].value_counts())
+# print(df_events[['stablecoin','type']].value_counts())
 
-# Convert to unstacked df
-plot_data = df_events[['stablecoin','type']].value_counts().unstack(fill_value=0)
-# Create grouped bar chart
-# plt.figure(figsize=(12, 6))
-plot_data.plot(kind='bar', color=['red', 'green'])
-plt.title('Grouped Bar Chart', fontsize=14)
-plt.xlabel('Stablecoin Type')
-plt.ylabel('Count')
-plt.legend(title='Sentiment')
-plt.tick_params(axis='x', rotation=45)
-plt.show()
+# # Convert to unstacked df
+# plot_data = df_events[['stablecoin','type']].value_counts().unstack(fill_value=0)
+# # Create grouped bar chart
+# # plt.figure(figsize=(12, 6))
+# plot_data.plot(kind='bar', color=['red', 'green'])
+# plt.title('Grouped Bar Chart', fontsize=14)
+# plt.xlabel('Stablecoin Type')
+# plt.ylabel('Count')
+# plt.legend(title='Sentiment')
+# plt.tick_params(axis='x', rotation=45)
+# plt.show()
 
-# Time Series Plot (Line Chart) of event frequency (e.g., events per week or month) 
-df_events['week'] = df_events['datetime'].dt.to_period('W').dt.start_time
+# # Time Series Plot (Line Chart) of event frequency (e.g., events per week or month) 
+# df_events['week'] = df_events['datetime'].dt.to_period('W').dt.start_time
 
-# Method : Using Seaborn for a cleaner look
-plt.figure(figsize=(14, 8))
-sns.lineplot(data=df_events.groupby(['week', 'type']).size().reset_index(name='count'),
-             x='week', y='count', hue='type',
-             palette=['green', 'red'],
-             marker='o', linewidth=2.5, markersize=10)
+# # Method : Using Seaborn for a cleaner look
+# plt.figure(figsize=(14, 8))
+# sns.lineplot(data=df_events.groupby(['week', 'type']).size().reset_index(name='count'),
+#              x='week', y='count', hue='type',
+#              palette=['green', 'red'],
+#              marker='o', linewidth=2.5, markersize=10)
 
-plt.title('Event Frequency Over Time (Aggragated by Week)', fontsize=16, fontweight='bold', pad=20)
-plt.xlabel('Week (Start Date)', fontsize=12)
-plt.ylabel('Number of Events', fontsize=12)
-plt.legend(title='Event Type')
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
-# Multiple stablecoins comparison
-plt.figure(figsize=(12, 6))
-
-for coin in df_price['stablecoin'].unique():
-    coin_data = df_price[df_price['stablecoin'] == coin]
-    plt.plot(coin_data['datetime'], coin_data['close'], label=coin.upper())
-
-plt.title('Daily Close Prices of Stablecoins and WLUNA')
-plt.xlabel('Date')
-plt.ylabel('Close Price (USD)')
-plt.legend()
-plt.grid(True)
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.yscale('log') # Use log scale to visualize both stable coins and the collapse of WLUNA/USTC
-# plt.ylim(1e-5, 150) # Set reasonable limits for log scale
-plt.show()
-
-
-# # Subplots for each stablecoin
-# stablecoins = df_price['stablecoin'].unique()
-# fig, axes = plt.subplots(len(stablecoins), 1, figsize=(12, 4*len(stablecoins)))
-
-# if len(stablecoins) == 1:
-#     axes = [axes]
-
-# for i, coin in enumerate(stablecoins):
-#     coin_data = df_price[df_price['stablecoin'] == coin]
-#     axes[i].plot(coin_data['datetime'], coin_data['close'])
-#     axes[i].set_title(f'{coin.upper()} Price')
-#     axes[i].set_ylabel('Price')
-#     axes[i].grid(True)
-#     # axes[i].tick_params(axis='x', rotation=45)
-
-# plt.xlabel('Date')
+# plt.title('Event Frequency Over Time (Aggragated by Week)', fontsize=16, fontweight='bold', pad=20)
+# plt.xlabel('Week (Start Date)', fontsize=12)
+# plt.ylabel('Number of Events', fontsize=12)
+# plt.legend(title='Event Type')
+# plt.grid(True, alpha=0.3)
 # plt.tight_layout()
 # plt.show()
 
-# Multiple stablecoins (with price ranges) comparison 
-plt.figure(figsize=(12, 6))
+# # Multiple stablecoins comparison
+# plt.figure(figsize=(12, 6))
 
-for coin in df_price['stablecoin'].unique():
-    coin_data = df_price[df_price['stablecoin'] == coin]
-    plt.fill_between(coin_data['datetime'], 
-                    coin_data['low'], 
-                    coin_data['high'], 
-                    alpha=0.3, label=f'{coin} range')
-    plt.plot(coin_data['datetime'], coin_data['close'], 
-            label=f'{coin} close', linewidth=2)
+# for coin in df_price['stablecoin'].unique():
+#     coin_data = df_price[df_price['stablecoin'] == coin]
+#     plt.plot(coin_data['datetime'], coin_data['close'], label=coin.upper())
 
-plt.title('Daily Prices of Stablecoins and WLUNA')
-plt.xlabel('Date')
-plt.ylabel('Price (USD)')
-plt.legend()
-plt.grid(True)
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.yscale('log')
-plt.show()
+# plt.title('Daily Close Prices of Stablecoins and WLUNA')
+# plt.xlabel('Date')
+# plt.ylabel('Close Price (USD)')
+# plt.legend()
+# plt.grid(True)
+# plt.xticks(rotation=45)
+# plt.tight_layout()
+# plt.yscale('log') # Use log scale to visualize both stable coins and the collapse of WLUNA/USTC
+# # plt.ylim(1e-5, 150) # Set reasonable limits for log scale
+# plt.show()
 
 
-# Volatility and Risk Analysis (Daily Range)
-# Calculate Daily Range (High - Low) for each coin
+# # # Subplots for each stablecoin
+# # stablecoins = df_price['stablecoin'].unique()
+# # fig, axes = plt.subplots(len(stablecoins), 1, figsize=(12, 4*len(stablecoins)))
 
-plt.figure(figsize=(12, 6))
+# # if len(stablecoins) == 1:
+# #     axes = [axes]
 
-for coin in df_price['stablecoin'].unique():
-    coin_data = df_price[df_price['stablecoin'] == coin]
-    plt.plot(coin_data['datetime'], coin_data['high'] - coin_data['low'], 
-            label=f'{coin.upper()}', linewidth=1)
+# # for i, coin in enumerate(stablecoins):
+# #     coin_data = df_price[df_price['stablecoin'] == coin]
+# #     axes[i].plot(coin_data['datetime'], coin_data['close'])
+# #     axes[i].set_title(f'{coin.upper()} Price')
+# #     axes[i].set_ylabel('Price')
+# #     axes[i].grid(True)
+# #     # axes[i].tick_params(axis='x', rotation=45)
 
-plt.title('Daily Intraday Volatility (High - Low)')
-plt.xlabel('Date')
-plt.ylabel('Daily Price Range (USD)')
-plt.legend()
-plt.grid(True)
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.yscale('log')
-plt.show()
+# # plt.xlabel('Date')
+# # plt.tight_layout()
+# # plt.show()
 
-# ###########################################
-# Event timeline with vertical lines (overlay on price chart)
-fig, ax = plt.subplots(figsize=(14, 8))
-import math
-# Plot price data first
-for coin in df_price['stablecoin'].unique():
-    coin_data = df_price[df_price['stablecoin'] == coin]
-    ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
+# # Multiple stablecoins (with price ranges) comparison 
+# plt.figure(figsize=(12, 6))
 
-# Add event vertical lines
-for i, event in df_events.iterrows():
-    # print(i)
-    ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
-    ax.text(event['datetime'], 
-            10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
-            f"$\mathbf{{Event\ {i+1}}}$: {event['event'][:30] + "..."}", 
-            rotation=0, fontsize=7)
+# for coin in df_price['stablecoin'].unique():
+#     coin_data = df_price[df_price['stablecoin'] == coin]
+#     plt.fill_between(coin_data['datetime'], 
+#                     coin_data['low'], 
+#                     coin_data['high'], 
+#                     alpha=0.3, label=f'{coin} range')
+#     plt.plot(coin_data['datetime'], coin_data['close'], 
+#             label=f'{coin} close', linewidth=2)
 
-ax.set_title('Prices of Stablecoins and WLUNA with Events')
-ax.set_xlabel('Date')
-ax.set_ylabel('Price (USD)')
-ax.legend()
-ax.grid(True, alpha=0.3)
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.yscale('log')
-plt.show()
+# plt.title('Daily Prices of Stablecoins and WLUNA')
+# plt.xlabel('Date')
+# plt.ylabel('Price (USD)')
+# plt.legend()
+# plt.grid(True)
+# plt.xticks(rotation=45)
+# plt.tight_layout()
+# plt.yscale('log')
+# plt.show()
 
 
+# # Volatility and Risk Analysis (Daily Range)
+# # Calculate Daily Range (High - Low) for each coin
 
-fig, ax = plt.subplots(figsize=(14, 8))
-import math
-# Plot price data first
-for coin in df_price['stablecoin'].unique():
-    coin_data = df_price[df_price['stablecoin'] == coin]
-    ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
+# plt.figure(figsize=(12, 6))
 
-# Add event vertical lines
-for i, event in df_events.iterrows():
-    # print(i)
-    ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
-    ax.text(event['datetime'], 
-            10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
-            f"$\mathbf{{Event\ {i+1}}}$: {event['type']}", 
-            rotation=0, fontsize=7)
+# for coin in df_price['stablecoin'].unique():
+#     coin_data = df_price[df_price['stablecoin'] == coin]
+#     plt.plot(coin_data['datetime'], coin_data['high'] - coin_data['low'], 
+#             label=f'{coin.upper()}', linewidth=1)
 
-ax.set_title('Prices of Stablecoins and WLUNA with Event Sentiment')
-ax.set_xlabel('Date')
-ax.set_ylabel('Price (USD)')
-ax.legend()
-ax.grid(True, alpha=0.3)
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.yscale('log')
-plt.show()
+# plt.title('Daily Intraday Volatility (High - Low)')
+# plt.xlabel('Date')
+# plt.ylabel('Daily Price Range (USD)')
+# plt.legend()
+# plt.grid(True)
+# plt.xticks(rotation=45)
+# plt.tight_layout()
+# plt.yscale('log')
+# plt.show()
+
+# # ###########################################
+# # Event timeline with vertical lines (overlay on price chart)
+# fig, ax = plt.subplots(figsize=(14, 8))
+# import math
+# # Plot price data first
+# for coin in df_price['stablecoin'].unique():
+#     coin_data = df_price[df_price['stablecoin'] == coin]
+#     ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
+
+# # Add event vertical lines
+# for i, event in df_events.iterrows():
+#     # print(i)
+#     ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
+#     ax.text(event['datetime'], 
+#             10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
+#             f"$\mathbf{{Event\ {i+1}}}$: {event['event'][:30] + "..."}", 
+#             rotation=0, fontsize=7)
+
+# ax.set_title('Prices of Stablecoins and WLUNA with Events')
+# ax.set_xlabel('Date')
+# ax.set_ylabel('Price (USD)')
+# ax.legend()
+# ax.grid(True, alpha=0.3)
+# plt.xticks(rotation=45)
+# plt.tight_layout()
+# plt.yscale('log')
+# plt.show()
+
+
+
+# fig, ax = plt.subplots(figsize=(14, 8))
+# import math
+# # Plot price data first
+# for coin in df_price['stablecoin'].unique():
+#     coin_data = df_price[df_price['stablecoin'] == coin]
+#     ax.plot(coin_data['datetime'], coin_data['close'], label=coin, linewidth=2)
+
+# # Add event vertical lines
+# for i, event in df_events.iterrows():
+#     # print(i)
+#     ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
+#     ax.text(event['datetime'], 
+#             10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
+#             f"$\mathbf{{Event\ {i+1}}}$: {event['type']}", 
+#             rotation=0, fontsize=7)
+
+# ax.set_title('Prices of Stablecoins and WLUNA with Event Sentiment')
+# ax.set_xlabel('Date')
+# ax.set_ylabel('Price (USD)')
+# ax.legend()
+# ax.grid(True, alpha=0.3)
+# plt.xticks(rotation=45)
+# plt.tight_layout()
+# plt.yscale('log')
+# plt.show()
 
 
 
 
-# Correlation analysis
-import seaborn as sns
-# 1. Pivot the data to get stablecoins as columns and date as index
-pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close')
+# # Correlation analysis
+# import seaborn as sns
+# # 1. Pivot the data to get stablecoins as columns and date as index
+# pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close')
 
-# 2. Calculate the correlation matrix
-corr_matrix = pivot_df.corr(method='pearson')
+# # 2. Calculate the correlation matrix
+# corr_matrix = pivot_df.corr(method='pearson')
 
-# 3. Generate a heatmap of the correlation matrix
-plt.figure(figsize=(10, 8))
-sns.heatmap(corr_matrix, annot=True, fmt=".4f", cmap='coolwarm',
-            cbar_kws={'label': 'Pearson Correlation Coefficient (ρ)'},
-            linewidths=.5, linecolor='black')
-plt.title('Correlation Matrix of Stablecoin/Asset Daily Close Prices')
-plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
-plt.tight_layout()
-plt.show()
-######################
-############################### Plots Done
+# # 3. Generate a heatmap of the correlation matrix
+# plt.figure(figsize=(10, 8))
+# sns.heatmap(corr_matrix, annot=True, fmt=".4f", cmap='coolwarm',
+#             cbar_kws={'label': 'Pearson Correlation Coefficient (ρ)'},
+#             linewidths=.5, linecolor='black')
+# plt.title('Correlation Matrix of Stablecoin/Asset Daily Close Prices')
+# plt.xticks(rotation=45, ha='right')
+# plt.yticks(rotation=0)
+# plt.tight_layout()
+# plt.show()
+# ######################
+# ############################### Plots Done
 
 
 
@@ -250,20 +250,11 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 # --- Data Preparation ---
 
-# # Load and process USDT price data
-# usdt_price_df = pd.read_csv('usdt_price_data.csv')
-# usdt_price_df['timestamp'] = pd.to_datetime(usdt_price_df['timestamp'], unit='s').dt.date
-# usdt_price_df = usdt_price_df.set_index('timestamp')
-
-# # Load and process event data
-# event_df = pd.read_csv('event_data.csv')
-# event_df['timestamp'] = pd.to_datetime(event_df['timestamp'], unit='s').dt.date
-
 # Feature Engineering: Count all positive/negative events for all stablecoins
 daily_events = df_events.groupby(['datetime', 'stablecoin'])['type'].value_counts().unstack(fill_value=0)
 event_features = daily_events.unstack(level='stablecoin').fillna(0)
-event_features.columns = [f'{sc}_events_{t}' for t, sc in event_features.columns]
-
+event_features.columns = [f'{sc}_events_{ty}' for ty, sc in event_features.columns]
+df_events[df_events['stablecoin'== 'unknown']]
 # Merge data and create lagged price feature
 merged_df = df_price_usdt.merge(event_features, left_index=True, right_index=True, how='left')
 merged_df = merged_df.fillna(0)
