@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime, timezone
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 ############# Part 1. Data Loading
 #############
@@ -49,10 +50,10 @@ print(df_events['type'].value_counts())
 print(df_events[['stablecoin','type']].value_counts())
 
 # Convert to unstacked df
-df = df_events[['stablecoin','type']].value_counts().unstack(fill_value=0)
+plot_data = df_events[['stablecoin','type']].value_counts().unstack(fill_value=0)
 # Create grouped bar chart
 # plt.figure(figsize=(12, 6))
-df.plot(kind='bar', color=['red', 'green'])
+plot_data.plot(kind='bar', color=['red', 'green'])
 plt.title('Grouped Bar Chart', fontsize=14)
 plt.xlabel('Stablecoin Type')
 plt.ylabel('Count')
@@ -61,37 +62,22 @@ plt.tick_params(axis='x', rotation=45)
 plt.show()
 
 # Time Series Plot (Line Chart) of event frequency (e.g., events per week or month) 
-df['week'] = df['date'].dt.to_period('W').dt.start_time
-temporal_data = df.groupby(['week', 'type']).size().reset_index(name='count')
-temporal_data['week'] = temporal_data['week'].astype(str)  
-# Convert Period to string for Altair
-#  Create the time series chart
-temporal_chart = alt.Chart(temporal_data).mark_line().encode(
-    x=alt.X('week', title='Date (Start of Week)'),
-    y=alt.Y('count', title='Number of Events'),
-    color=alt.Color('type', scale=alt.Scale(domain=['positive', 'negative'], range=['34A853', 'EA4335']), legend=alt.Legend(title="Event Type")),
-    tooltip=['week', 'type', 'count']
-).properties(
-    title='Event Frequency Over Time (Aggregated by Week)'
-)
-temporal_chart.save('event_frequency_over_time.json')
+df_events['week'] = df_events['datetime'].dt.to_period('W').dt.start_time
 
+# Method : Using Seaborn for a cleaner look
+plt.figure(figsize=(14, 8))
+sns.lineplot(data=df_events.groupby(['week', 'type']).size().reset_index(name='count'),
+             x='week', y='count', hue='type',
+             palette=['green', 'red'],
+             marker='o', linewidth=2.5, markersize=10)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+plt.title('Event Frequency Over Time (Aggragated by Week)', fontsize=16, fontweight='bold', pad=20)
+plt.xlabel('Week (Start Date)', fontsize=12)
+plt.ylabel('Number of Events', fontsize=12)
+plt.legend(title='Event Type')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
 
 # Multiple stablecoins comparison
 plt.figure(figsize=(12, 6))
