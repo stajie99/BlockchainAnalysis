@@ -249,14 +249,13 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
 # --- Data Preparation ---
-
 # Feature Engineering: Count all positive/negative events for all stablecoins
 daily_events = df_events.groupby(['datetime', 'stablecoin'])['type'].value_counts().unstack(fill_value=0)
 event_features = daily_events.unstack(level='stablecoin').fillna(0)
 event_features.columns = [f'{sc}_events_{ty}' for ty, sc in event_features.columns]
-df_events[df_events['stablecoin'== 'unknown']]
+
 # Merge data and create lagged price feature
-merged_df = df_price_usdt.merge(event_features, left_index=True, right_index=True, how='left')
+merged_df = df_price.merge(event_features, on='datetime', how='left')
 merged_df = merged_df.fillna(0)
 merged_df['prev_close'] = merged_df['close'].shift(1)
 merged_df.dropna(inplace=True)
