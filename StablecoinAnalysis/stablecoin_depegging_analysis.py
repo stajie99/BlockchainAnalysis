@@ -255,11 +255,12 @@ event_features = daily_events.unstack(level='stablecoin').fillna(0)
 event_features.columns = [f'{sc}_events_{ty}' for ty, sc in event_features.columns]
 
 # Merge data and create lagged price feature
-merged_df = df_price.merge(event_features, on='datetime', how='left')
+merged_df = df_price[df_price['stablecoin'] == 'usdt'].merge(event_features, on='datetime', how='left')
 merged_df = merged_df.fillna(0)
-merged_df['prev_close'] = merged_df['close'].shift(1)
+merged_df['prev_close'] = merged_df.groupby('stablecoin')['close'].shift(1)
 merged_df.dropna(inplace=True)
 
+merged_df[['stablecoin', 'datetime']]
 # --- Model Training and Evaluation ---
 
 # Define features (X) and target (y)
@@ -268,6 +269,7 @@ target = 'close'
 
 X = merged_df[features]
 y = merged_df[target]
+
 
 # Split data: 80% train, 20% test (preserving time order: shuffle=False)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
