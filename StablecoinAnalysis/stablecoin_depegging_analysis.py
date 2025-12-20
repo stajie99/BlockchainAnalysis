@@ -255,10 +255,18 @@ event_features = daily_events.unstack(level='stablecoin').fillna(0)
 event_features.columns = [f'{sc}_events_{ty}' for ty, sc in event_features.columns]
 
 # Merge data and create lagged price feature
-merged_df = df_price[df_price['stablecoin'] == 'usdt'].merge(event_features, on='datetime', how='left')
+merged_df = df_price.merge(event_features, on='datetime', how='left')
 merged_df = merged_df.fillna(0)
 merged_df['prev_close'] = merged_df.groupby('stablecoin')['close'].shift(1)
 merged_df.dropna(inplace=True)
+
+merged_df = merged_df.set_index('stablecoin', append=True)   # Create MultiIndex first
+lagged_price_features = merged_df['prev_close'].unstack(level='stablecoin').fillna(0).reset_index()
+
+lagged_price_features = pd.concat([merged_df['datetime'], lagged_price_features], axis=1)
+lagged_price_features.columns = [f'{sc}_close_(t-1)' for sc in lagged_price_features.columns]
+
+
 
 merged_df[['stablecoin', 'datetime']]
 # --- Model Training and Evaluation ---
