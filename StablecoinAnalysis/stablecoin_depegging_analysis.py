@@ -261,14 +261,15 @@ merged_df['prev_close'] = merged_df.groupby('stablecoin')['close'].shift(1)
 merged_df.dropna(inplace=True)
 
 merged_df = merged_df.set_index('stablecoin', append=True)   # Create MultiIndex first
-lagged_price_features = merged_df['prev_close'].unstack(level='stablecoin').fillna(0).reset_index()
+lagged_price_features = merged_df['prev_close'].unstack(level='stablecoin').fillna(0)  # back to single index
+# lagged_price_features.columns.name = None  # Remove column level name
+# # Keep the original index as index, don't reset_index()
+merged_df = merged_df.reset_index(level=1).rename(columns={'stablecoin': 'stablecoin'})  # move the 'stablecoin' index level to a column
 
-lagged_price_features = pd.concat([merged_df['datetime'], lagged_price_features], axis=1)
 lagged_price_features.columns = [f'{sc}_close_(t-1)' for sc in lagged_price_features.columns]
+lagged_price_features = pd.concat([merged_df['datetime'], lagged_price_features], axis=1)
+print(lagged_price_features)
 
-
-
-merged_df[['stablecoin', 'datetime']]
 # --- Model Training and Evaluation ---
 
 # Define features (X) and target (y)
