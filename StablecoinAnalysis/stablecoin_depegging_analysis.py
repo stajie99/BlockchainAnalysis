@@ -273,19 +273,19 @@ lagged_price_features.columns = [f'{sc}_close_(t-1)' for sc in lagged_price_feat
 
 merged_df = lagged_price_features.merge(event_features, on='datetime', how='left')
 merged_df = merged_df.fillna(0)
-merged_df = df_price[]
+merged_df = df_price[['datetime', 'close']].merge(merged_df, on='datetime', how='left')
 # --- Model Training and Evaluation ---
 
 # Define features (X) and target (y)
-# features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
-features = [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
+features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
+# features = [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
 target = 'close'
 
 X = merged_df[features]
 y = merged_df[target]
 
 
-merged_df[['datetime','stablecoin']]
+# merged_df[['datetime','stablecoin']]
 # Split data: 80% train, 20% test (preserving time order: shuffle=False)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
@@ -298,12 +298,6 @@ y_pred = model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-# Extract Feature Importance
-feature_importance = pd.Series(model.feature_importances_, index=features).sort_values(ascending=False)
-
-print(f"Mean Squared Error (MSE): {mse}")
-print(f"R-squared (R2): {r2}")
-print("Feature Importance:\n", feature_importance)
 
 
 # visualiza the results
@@ -360,6 +354,12 @@ model.fit(X_train, y_train)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 feature_importance = pd.Series(model.feature_importances_, index=features)
+
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"R-squared (R2): {r2}")
+print("Feature Importance:\n", feature_importance)
+# Extract Feature Importance
+feature_importance = pd.Series(model.feature_importances_, index=features).sort_values(ascending=False)
 
 print(f"Mean Squared Error (MSE): {mse}")
 print(f"R-squared (R2): {r2}")
