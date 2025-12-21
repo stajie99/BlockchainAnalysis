@@ -270,16 +270,20 @@ lagged_price_features.columns = [f'{sc}_close_(t-1)' for sc in lagged_price_feat
 lagged_price_features = pd.concat([merged_df['datetime'], lagged_price_features], axis=1)
 print(lagged_price_features)
 
+merged_df = merged_df.merge(lagged_price_features, on='datetime', how='left')
+merged_df = merged_df.fillna(0)
 # --- Model Training and Evaluation ---
 
 # Define features (X) and target (y)
-features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col]
+# features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
+features = [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
 target = 'close'
 
 X = merged_df[features]
 y = merged_df[target]
 
 
+merged_df[['datetime','stablecoin']]
 # Split data: 80% train, 20% test (preserving time order: shuffle=False)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
