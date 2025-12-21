@@ -249,29 +249,31 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
 # --- Data Preparation ---
-# Feature Engineering: Count all positive/negative events for all stablecoins
+# Feature Engineering 1: Count all positive/negative events for all stablecoins
 daily_events = df_events.groupby(['datetime', 'stablecoin'])['type'].value_counts().unstack(fill_value=0)
 event_features = daily_events.unstack(level='stablecoin').fillna(0)
 event_features.columns = [f'{sc}_events_{ty}' for ty, sc in event_features.columns]
 
-# Merge data and create lagged price feature
-merged_df = df_price.merge(event_features, on='datetime', how='left')
-merged_df = merged_df.fillna(0)
-merged_df['prev_close'] = merged_df.groupby('stablecoin')['close'].shift(1)
-merged_df.dropna(inplace=True)
+# # Merge with event data
+# merged_df = df_price.merge(event_features, on='datetime', how='left')
+# merged_df = merged_df.fillna(0)
 
-merged_df = merged_df.set_index('stablecoin', append=True)   # Create MultiIndex first
-lagged_price_features = merged_df['prev_close'].unstack(level='stablecoin').fillna(0)  # back to single index
-# lagged_price_features.columns.name = None  # Remove column level name
-# # Keep the original index as index, don't reset_index()
-merged_df = merged_df.reset_index(level=1).rename(columns={'stablecoin': 'stablecoin'})  # move the 'stablecoin' index level to a column
-
+# Feature Engineering 2: Create lagged price feature. Pivot with the constant group : datatime
+df_price['prev_close'] = df_price.groupby('stablecoin')['close'].shift(1)
+df_price.dropna(inplace=True)
+# 
+lagged_price_features = df_price.pivot(index='datetime', columns='stablecoin', values='prev_close')
+# lagged_price_features = lagged_price_features.reset_index()
 lagged_price_features.columns = [f'{sc}_close_(t-1)' for sc in lagged_price_features.columns]
-lagged_price_features = pd.concat([merged_df['datetime'], lagged_price_features], axis=1)
-print(lagged_price_features)
 
-merged_df = merged_df.merge(lagged_price_features, on='datetime', how='left')
+# merged_df = merged_df.drop(['stablecoin', 'prev_close'], axis=1).set_index('datetime')  # Set datetime as new index
+
+# lagged_price_features = pd.concat([merged_df['datetime'], lagged_price_features], axis=1)
+# print(lagged_price_features)
+
+merged_df = lagged_price_features.merge(event_features, on='datetime', how='left')
 merged_df = merged_df.fillna(0)
+merged_df = df_price[]
 # --- Model Training and Evaluation ---
 
 # Define features (X) and target (y)
