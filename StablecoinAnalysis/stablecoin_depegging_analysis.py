@@ -86,9 +86,9 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 #     coin_data = df_price[df_price['stablecoin'] == coin]
 #     plt.plot(coin_data['datetime'], coin_data['close'], label=coin.upper())
 
-# plt.title('Daily Close Prices of Stablecoins and WLUNA')
+# plt.title('Daily close Prices of Stablecoins and WLUNA')
 # plt.xlabel('Date')
-# plt.ylabel('Close Price (USD)')
+# plt.ylabel('close Price (USD)')
 # plt.legend()
 # plt.grid(True)
 # plt.xticks(rotation=45)
@@ -232,7 +232,7 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 # sns.heatmap(corr_matrix, annot=True, fmt=".4f", cmap='coolwarm',
 #             cbar_kws={'label': 'Pearson Correlation Coefficient (ρ)'},
 #             linewidths=.5, linecolor='black')
-# plt.title('Correlation Matrix of Stablecoin/Asset Daily Close Prices')
+# plt.title('Correlation Matrix of Stablecoin/Asset Daily close Prices')
 # plt.xticks(rotation=45, ha='right')
 # plt.yticks(rotation=0)
 # plt.tight_layout()
@@ -307,7 +307,7 @@ y_pred = pipeline.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 # Extract Feature Importance
-feature_importance = pd.Series(pipeline.feature_importances_, index=features).sort_values(ascending=False)
+feature_importance = pd.Series(pipeline.named_steps['rf'].feature_importances_, index=features).sort_values(ascending=False)
 
 
 print(f"Mean Squared Error (MSE): {mse}")
@@ -318,15 +318,15 @@ print("Feature Importance:\n", feature_importance)
 # visualiza the results
 # Create a DataFrame for plotting
 results_df = pd.DataFrame({
-    'Actual Close': y_test,
-    'Predicted Close': y_pred
+    'Actual close': y_test,
+    'Predicted close': y_pred
 })
 results_df.to_csv('prediction_results_data.csv')
 # Plotting the results
 plt.figure(figsize=(12, 6))
-plt.plot(results_df.index, results_df['Actual Close'], label='USTC Actual Close Price', color='blue', linewidth=2)
-plt.plot(results_df.index, results_df['Predicted Close'], label='USTC Predicted Close Price', color='red', linestyle='--', linewidth=1)
-plt.title('Random Forest Model Prediction vs. Actual USTC Close Price (Test Set)')
+plt.plot(results_df.index, results_df['Actual close'], label='USTC Actual close Price', color='blue', linewidth=2)
+plt.plot(results_df.index, results_df['Predicted close'], label='USTC Predicted close Price', color='red', linestyle='--', linewidth=1)
+plt.title('Random Forest Model Prediction vs. Actual USTC close Price (Test Set)')
 plt.xlabel('Date')
 plt.ylabel('USTC Price (USD)')
 plt.legend()
