@@ -289,16 +289,32 @@ target = 'close'
 X = merged_df[features]
 y = merged_df[target]
 
-
 # merged_df[['datetime','stablecoin']]
-# Create pipeline
-pipeline = Pipeline([
-    ('scaler', StandardScaler()),
-    ('rf', RandomForestRegressor(n_estimators=20, random_state=42, n_jobs=-1))
-])
 # Split data: 80% train, 20% test (preserving time order: shuffle=False)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
+
+########## Feature-to-Sample Ratio
+n_samples = X_train.shape[0]
+n_features = X_train.shape[1]
+ratio = n_samples / n_features
+    
+print(f"\n📊 DATA DIMENSIONALITY CHECK:")
+print(f"Samples: {n_samples}")
+print(f"Features: {n_features}")
+print(f"Samples/Feature ratio: {ratio:.1f}")
+####################
+# Create pipeline
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('rf', RandomForestRegressor(n_estimators=20, random_state=42, n_jobs=-1, 
+                                 max_depth=5,               # Shallower trees
+                                 min_samples_split=10      # Require more samples to split
+                                #  min_samples_leaf=5,        # Larger leaf nodes
+                                #  max_features='sqrt',       # Use fewer features per split
+                                #  bootstrap=True             # Use bootstrap sampling
+                                 ))
+        ])
 # Fit pipeline: train Random Forest Regressor
 pipeline.fit(X_train, y_train)
 # Predictions are automatically in original scale
