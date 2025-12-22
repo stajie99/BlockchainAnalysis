@@ -294,7 +294,7 @@ y = merged_df[target]
 # Create pipeline
 pipeline = Pipeline([
     ('scaler', StandardScaler()),
-    ('rf', RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1))
+    ('rf', RandomForestRegressor(n_estimators=20, random_state=42, n_jobs=-1))
 ])
 # Split data: 80% train, 20% test (preserving time order: shuffle=False)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
@@ -343,11 +343,9 @@ plt.show()
 # Make predictions for both training and testing
 y_train_pred = pipeline.predict(X_train)
 y_test_pred = pipeline.predict(X_test)
-
 # Calculate metrics for training set
 train_mse = mean_squared_error(y_train, y_train_pred)
 train_r2 = r2_score(y_train, y_train_pred)
-
 # Calculate metrics for testing set
 test_mse = mean_squared_error(y_test, y_test_pred)
 test_r2 = r2_score(y_test, y_test_pred)
@@ -358,9 +356,55 @@ print(f"{'Metric':<20} {'Training':<15} {'Testing':<15}")
 print(f"{'R-squared':<20} {train_r2:<15.4f} {test_r2:<15.4f}")
 print(f"{'MSE':<20} {train_mse:<15.4f} {test_mse:<15.4f}")
 
-
 # Check for overfitting
 overfit_r2 = train_r2 - test_r2
 print(f"\nOverfitting indicator (R² diff): {overfit_r2:.4f}")
 if overfit_r2 > 0.1:
     print("⚠️  Warning: Possible overfitting (training R² much higher than test R²)")
+
+
+#########################################################
+#################  Time Series model fitting
+import statsmodels.api as sm
+# Add constant (intercept) column
+X_train_with_const = sm.add_constant(X_train)
+X_test_with_const = sm.add_constant(X_test)
+
+# Fit OLS model
+ols_model = sm.OLS(y_train, X_train_with_const)  #Initializes the model structure.
+ols_fit = ols_model.fit()
+# Get full summary with p-values
+print(ols_fit.summary())
+print(ols_fit.pvalues)
+# Predictions
+del y_pred
+y_pred = ols_fit.predict(X_test_with_const)
+
+# Evaluation
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"R-squared (R2): {r2}")
+
+# visualiza the results
+# Create a DataFrame for plotting
+
+results_df = pd.DataFrame({
+    'Actual close': y_test,
+    'Predicted close': y_pred
+})
+results_df.to_csv('prediction_results_data.csv')
+# Plotting the results
+plt.figure(figsize=(12, 6))
+plt.plot(results_df.index, results_df['Actual close'], label='USTC Actual close Price', color='blue', linewidth=2)
+plt.plot(results_df.index, results_df['Predicted close'], label='USTC Predicted close Price', color='red', linestyle='--', linewidth=1)
+plt.title('Time Series Model Prediction vs. Actual USTC close Price (Test Set)')
+plt.xlabel('Date')
+plt.ylabel('USTC Price (USD)')
+plt.legend()
+# plt.xticks(rotation=45)
+plt.grid(True, linestyle=':', alpha=0.6)
+# plt.tight_layout()
+plt.savefig('ts_ustc_prediction_vs_actual.png')
+plt.show()
