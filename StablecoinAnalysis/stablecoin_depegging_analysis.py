@@ -42,7 +42,7 @@ df_price['datetime'] = pd.to_datetime(df_price['timestamp'], unit='s')
 df_price = df_price.drop('timestamp', axis=1)
 print(df_price)
 
-df_price = df_price.sort_values('datetime') # ensure chronological order
+df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronological order
 
 # ############# Part 2. Simple Data Analysis
 # #############
@@ -274,7 +274,9 @@ lagged_price_features.columns = [f'{sc}_close_(t-1)' for sc in lagged_price_feat
 merged_df = lagged_price_features.merge(event_features, on='datetime', how='left')
 merged_df = merged_df.fillna(0)
 merged_df = df_price.loc[df_price['stablecoin'] == 'ustc', ['datetime', 'close']].merge(merged_df, on='datetime', how='left')
-# merged_df.to_csv('merged_data.csv')
+merged_df = merged_df.set_index('datetime')
+merged_df.to_csv('merged_data.csv')
+df_price.to_csv('price_data.csv')
 # --- Model Training and Evaluation ---
 
 # Define features (X) and target (y)
@@ -313,18 +315,46 @@ results_df = pd.DataFrame({
     'Actual Close': y_test,
     'Predicted Close': y_pred
 })
-
+results_df.to_csv('prediction_results_data.csv')
 # Plotting the results
 plt.figure(figsize=(12, 6))
-plt.plot(results_df.index, results_df['Actual Close'], label='Actual Close Price', color='blue', linewidth=2)
-plt.plot(results_df.index, results_df['Predicted Close'], label='Predicted Close Price', color='red', linestyle='--', linewidth=1)
-plt.title('Random Forest Model Prediction vs. Actual USDT Close Price (Test Set)')
+plt.plot(results_df.index, results_df['Actual Close'], label='USTC Actual Close Price', color='blue', linewidth=2)
+plt.plot(results_df.index, results_df['Predicted Close'], label='USTC Predicted Close Price', color='red', linestyle='--', linewidth=1)
+plt.title('Random Forest Model Prediction vs. Actual USTC Close Price (Test Set)')
 plt.xlabel('Date')
-plt.ylabel('USDT Price (USD)')
+plt.ylabel('USTC Price (USD)')
 plt.legend()
-plt.xticks(rotation=45)
+# plt.xticks(rotation=45)
 plt.grid(True, linestyle=':', alpha=0.6)
-plt.tight_layout()
+# plt.tight_layout()
+plt.savefig('ustc_prediction_vs_actual.png')
 plt.show()
 
 
+################################ for internal analysis
+
+
+# Make predictions for both training and testing
+y_train_pred = model.predict(X_train)
+y_test_pred = model.predict(X_test)
+
+# Calculate metrics for training set
+train_mse = mean_squared_error(y_train, y_train_pred)
+train_r2 = r2_score(y_train, y_train_pred)
+
+# Calculate metrics for testing set
+test_mse = mean_squared_error(y_test, y_test_pred)
+test_r2 = r2_score(y_test, y_test_pred)
+
+# Print metrics comparison
+print("MODEL EVALUATION METRICS")
+print(f"{'Metric':<20} {'Training':<15} {'Testing':<15}")
+print(f"{'R-squared':<20} {train_r2:<15.4f} {test_r2:<15.4f}")
+print(f"{'MSE':<20} {train_mse:<15.4f} {test_mse:<15.4f}")
+
+
+# Check for overfitting
+overfit_r2 = train_r2 - test_r2
+print(f"\nOverfitting indicator (R² diff): {overfit_r2:.4f}")
+if overfit_r2 > 0.1:
+    print("⚠️  Warning: Possible overfitting (training R² much higher than test R²)")
