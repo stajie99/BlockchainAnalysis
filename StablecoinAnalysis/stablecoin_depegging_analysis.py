@@ -273,12 +273,13 @@ lagged_price_features.columns = [f'{sc}_close_(t-1)' for sc in lagged_price_feat
 
 merged_df = lagged_price_features.merge(event_features, on='datetime', how='left')
 merged_df = merged_df.fillna(0)
-merged_df = df_price[['datetime', 'close']].merge(merged_df, on='datetime', how='left')
+merged_df = df_price.loc[df_price['stablecoin'] == 'ustc', ['datetime', 'close']].merge(merged_df, on='datetime', how='left')
+# merged_df.to_csv('merged_data.csv')
 # --- Model Training and Evaluation ---
 
 # Define features (X) and target (y)
-features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
-# features = [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
+# features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
+features = [col for col in merged_df.columns if '_events_' in col or '(t-1)' in col]
 target = 'close'
 
 X = merged_df[features]
@@ -297,7 +298,13 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
+# Extract Feature Importance
+feature_importance = pd.Series(model.feature_importances_, index=features).sort_values(ascending=False)
 
+
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"R-squared (R2): {r2}")
+print("Feature Importance:\n", feature_importance)
 
 
 # visualiza the results
@@ -321,46 +328,3 @@ plt.tight_layout()
 plt.show()
 
 
-
-#  Predict wluna price
-# --- Data Preparation ---
-
-# Feature Engineering: Count all positive/negative events for all stablecoins
-daily_events = df_events.groupby(['datetime', 'stablecoin'])['type'].value_counts().unstack(fill_value=0)
-event_features = daily_events.unstack(level='stablecoin').fillna(0)
-event_features.columns = [f'{sc}_events_{t}' for t, sc in event_features.columns]
-
-# Merge data and create lagged price feature
-merged_df = df_price_wluna.merge(event_features, left_index=True, right_index=True, how='left')
-merged_df = merged_df.fillna(0)
-merged_df['prev_close'] = merged_df['close'].shift(1)
-merged_df.dropna(inplace=True)
-
-# --- Model Training and Evaluation ---
-features = ['prev_close'] + [col for col in merged_df.columns if '_events_' in col]
-target = 'close'
-
-X = merged_df[features]
-y = merged_df[target]
-
-# Split data: 80% train, 20% test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False, random_state=42)
-
-# Train Random Forest Regressor
-model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-model.fit(X_train, y_train)
-
-# Evaluate metrics and feature importance
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-feature_importance = pd.Series(model.feature_importances_, index=features)
-
-print(f"Mean Squared Error (MSE): {mse}")
-print(f"R-squared (R2): {r2}")
-print("Feature Importance:\n", feature_importance)
-# Extract Feature Importance
-feature_importance = pd.Series(model.feature_importances_, index=features).sort_values(ascending=False)
-
-print(f"Mean Squared Error (MSE): {mse}")
-print(f"R-squared (R2): {r2}")
-print("Feature Importance:\n", feature_importance)
