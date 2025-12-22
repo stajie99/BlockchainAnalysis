@@ -273,7 +273,7 @@ lagged_price_features.columns = [f'{sc}_close_(t-1)' for sc in lagged_price_feat
 
 merged_df = lagged_price_features.merge(event_features, on='datetime', how='left')
 merged_df = merged_df.fillna(0)
-merged_df = df_price.loc[df_price['stablecoin'] == 'wluna', ['datetime', 'close']].merge(merged_df, on='datetime', how='left')
+merged_df = df_price.loc[df_price['stablecoin'] == 'usdt', ['datetime', 'close']].merge(merged_df, on='datetime', how='left')
 # merged_df.to_csv('merged_data.csv')
 # --- Model Training and Evaluation ---
 
