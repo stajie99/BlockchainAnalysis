@@ -247,6 +247,8 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 # --- Data Preparation ---
 # Feature Engineering 1: Count all positive/negative events for all stablecoins
@@ -289,19 +291,23 @@ y = merged_df[target]
 
 
 # merged_df[['datetime','stablecoin']]
+# Create pipeline
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('rf', RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1))
+])
 # Split data: 80% train, 20% test (preserving time order: shuffle=False)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
-# Train Random Forest Regressor
-model = RandomForestRegressor(n_estimators=100, random_state=20252026, n_jobs=-1)
-model.fit(X_train, y_train)
+# Fit pipeline: train Random Forest Regressor
+pipeline.fit(X_train, y_train)
+# Predictions are automatically in original scale
+y_pred = pipeline.predict(X_test)
 
-# Make predictions and evaluate
-y_pred = model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 # Extract Feature Importance
-feature_importance = pd.Series(model.feature_importances_, index=features).sort_values(ascending=False)
+feature_importance = pd.Series(pipeline.feature_importances_, index=features).sort_values(ascending=False)
 
 
 print(f"Mean Squared Error (MSE): {mse}")
@@ -335,8 +341,8 @@ plt.show()
 
 
 # Make predictions for both training and testing
-y_train_pred = model.predict(X_train)
-y_test_pred = model.predict(X_test)
+y_train_pred = pipeline.predict(X_train)
+y_test_pred = pipeline.predict(X_test)
 
 # Calculate metrics for training set
 train_mse = mean_squared_error(y_train, y_train_pred)
