@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from datetime import datetime, timezone
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -219,26 +220,76 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 
 
 
-# # Correlation analysis
-# import seaborn as sns
-# # 1. Pivot the data to get stablecoins as columns and date as index
-# pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close')
-
+# Correlation analysis
+import seaborn as sns
+# 1. Pivot the data to get stablecoins as columns and date as index
+pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close')
+# 1. Calculate Returns (log returns are better for correlation analysis)
+returns_df = np.log(pivot_df / pivot_df.shift(1)).dropna()
+print("\nDaily Log Returns:")
+print(returns_df.head())
 # # 2. Calculate the correlation matrix
-# corr_matrix = pivot_df.corr(method='pearson')
+# corr_matrix = returns_df.corr(method='pearson')
 
-# # 3. Generate a heatmap of the correlation matrix
-# plt.figure(figsize=(10, 8))
-# sns.heatmap(corr_matrix, annot=True, fmt=".4f", cmap='coolwarm',
-#             cbar_kws={'label': 'Pearson Correlation Coefficient (ρ)'},
-#             linewidths=.5, linecolor='black')
-# plt.title('Correlation Matrix of Stablecoin/Asset Daily close Prices')
-# plt.xticks(rotation=45, ha='right')
-# plt.yticks(rotation=0)
-# plt.tight_layout()
-# plt.show()
-# ######################
-# ############################### Plots Done
+def correlation_heatmap_timeline(returns_df, interval_days=1, window=7):
+    """
+    Create a series of correlation heatmaps over time
+    """
+    # Select key dates
+    start_date = returns_df.index[window - 1]
+    end_date = returns_df.index[-1]
+    
+    # Create weekly intervals
+    dates = pd.date_range(start=start_date , end=end_date, freq=f'{interval_days}D')
+    
+    fig, axes = plt.subplots(1, min(3, len(dates)), figsize=(20, 5))
+    
+    for i, date in enumerate(dates[:3]):  
+        # print(date)
+        if date in returns_df.index:
+            idx = returns_df.index.get_loc(date)
+            start_idx = max(0, idx - window)
+            rolling_wd_data = returns_df.iloc[start_idx:idx]
+            # print(rolling_wd_data)
+            corr_matrix = rolling_wd_data.corr(method='pearson')
+            
+            # Plot heatmap
+            sns.heatmap(corr_matrix, 
+                       ax=axes[i],
+                       annot=True, 
+                       fmt='.2f',
+                       cmap='RdBu_r',
+                       center=0,
+                       vmin=-1, vmax=1,
+                       square=True,
+                       cbar_kws={'shrink': 0.8})
+            
+            axes[i].set_title(f'{rolling_wd_data.index[0].date()} to {rolling_wd_data.index[-1].date()}')
+            axes[i].tick_params(axis='x', rotation=45)
+            axes[i].tick_params(axis='y', rotation=0)
+    
+    plt.suptitle(f'Evolution of Stablecoin Correlations ({window}-Day Rolling)', fontsize=16, y=1.05)
+    plt.tight_layout()
+    plt.show()
+
+# Create correlation timeline
+correlation_heatmap_timeline(returns_df, interval_days=30, window=7)
+
+
+
+
+# 3. Generate a heatmap of the correlation matrix
+plt.figure(figsize=(10, 8))
+sns.heatmap(corr_matrix, annot=True, fmt=".4f", cmap='coolwarm',
+            cbar_kws={'label': 'Pearson Correlation Coefficient (ρ)'},
+            linewidths=.5, linecolor='black')
+plt.title('Correlation Matrix of Stablecoin/Asset Daily close Prices')
+plt.xticks(rotation=45, ha='right')
+plt.yticks(rotation=0)
+plt.tight_layout()
+plt.show()
+######################
+############################### Plots Done
 
 
 
