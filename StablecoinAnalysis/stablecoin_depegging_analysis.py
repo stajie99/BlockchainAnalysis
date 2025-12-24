@@ -228,32 +228,46 @@ pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close'
 returns_df = np.log(pivot_df / pivot_df.shift(1)).dropna()
 print("\nDaily Log Returns:")
 print(returns_df.head())
+returns_df = returns_df.drop('wluna', axis=1)
 # # 2. Calculate the correlation matrix
 # corr_matrix = returns_df.corr(method='pearson')
 
-def correlation_heatmap_timeline(returns_df, interval_days=1, window=7):
+def correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7):
     """
-    Create a series of correlation heatmaps over time
+    Create a series of correlation heatmaps/matrice over time.
+    window:     the look-back period when calculating correlation matrix of stablecoin returns;
+                the longer, the slower to reflect latest market move; the shorter, the more fluctuation in correlation structure
+    frequency_days:     the frequency we report the changes in two adjacent correlation matrice.
     """
     # Select key dates
     start_date = returns_df.index[window - 1]
     end_date = returns_df.index[-1]
     
     # Create weekly intervals
-    dates = pd.date_range(start=start_date , end=end_date, freq=f'{interval_days}D')
+    dates = pd.date_range(start=start_date , end=end_date, freq=f'{frequency_days}D')
     
-    fig, axes = plt.subplots(1, min(3, len(dates)), figsize=(20, 5))
     
-    for i, date in enumerate(dates[:3]):  
-        # print(date)
+    corr_change = []
+    # corr_ = np.zeros((len(returns_df.columns), len(returns_df.columns)))   
+    corr_ = returns_df.iloc[0:window].corr(method='pearson').fillna(0)
+
+    for i, date in enumerate(dates):  
+        print(date)
         if date in returns_df.index:
             idx = returns_df.index.get_loc(date)
             start_idx = max(0, idx - window)
             rolling_wd_data = returns_df.iloc[start_idx:idx]
-            # print(rolling_wd_data)
-            corr_matrix = rolling_wd_data.corr(method='pearson')
+
+            corr_matrix = rolling_wd_data.corr(method='pearson').fillna(0) # Pearson correlation matrix
+            diff_corr = corr_matrix #- corr_ 
+            corr_change.append(round(np.linalg.norm(diff_corr, 'fro'), 4)) # magnititude change of correlation matrix - Frobenius norm
+            # Convert np.float64 to regular floats if needed
+            corr_change = [float(x) for x in corr_change] 
+            # corr_ = corr_matrix
             
             # Plot heatmap
+            # fig, axes = plt.subplots(1, len(dates), figsize=(20, 5))
+            fig, axes = plt.subplots(ncols=3, figsize=(20, 5))
             sns.heatmap(corr_matrix, 
                        ax=axes[i],
                        annot=True, 
@@ -271,9 +285,27 @@ def correlation_heatmap_timeline(returns_df, interval_days=1, window=7):
     plt.suptitle(f'Evolution of Stablecoin Correlations ({window}-Day Rolling)', fontsize=16, y=1.05)
     plt.tight_layout()
     plt.show()
+    
+    corr_change = pd.DataFrame(corr_change, index=dates, columns=['corr_change'])
+    # print(corr_change)
+    # print(dates)
+    
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(corr_change.index, corr_change['corr_change'], 
+             linewidth=2, label='Correlation Change')
+    plt.title('Magnitude of Change in Correlation over Time')
+    plt.xlabel('Date')
+    plt.legend()
+    plt.grid(True)
+    # plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
 
 # Create correlation timeline
-correlation_heatmap_timeline(returns_df, interval_days=30, window=7)
+correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7)
+
 
 
 
