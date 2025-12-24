@@ -251,6 +251,10 @@ def correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7):
     # corr_ = np.zeros((len(returns_df.columns), len(returns_df.columns)))   
     corr_ = returns_df.iloc[0:window].corr(method='pearson').fillna(0)
 
+    # fig, axes = plt.subplots(2, int(np.ceil(len(dates)/2)), figsize=(20, 5))
+    # # fig, axes = plt.subplots(3, 5, figsize=(20, 5))
+    # # Flatten axes for easy iteration
+    # axes_flat = axes.flatten()
     for i, date in enumerate(dates):  
         print(date)
         if date in returns_df.index:
@@ -265,26 +269,26 @@ def correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7):
             corr_change = [float(x) for x in corr_change] 
             # corr_ = corr_matrix
             
-            # Plot heatmap
-            # fig, axes = plt.subplots(1, len(dates), figsize=(20, 5))
-            fig, axes = plt.subplots(ncols=3, figsize=(20, 5))
-            sns.heatmap(corr_matrix, 
-                       ax=axes[i],
-                       annot=True, 
-                       fmt='.2f',
-                       cmap='RdBu_r',
-                       center=0,
-                       vmin=-1, vmax=1,
-                       square=True,
-                       cbar_kws={'shrink': 0.8})
+    #         # Plot heatmap
+    #         sns.heatmap(corr_matrix, 
+    #                    ax=axes_flat[i],  # Use flattened array
+    #                    annot=True, 
+    #                    fmt='.2f',
+    #                    cmap='RdBu_r',
+    #                    center=0,
+    #                    vmin=-1, vmax=1,
+    #                    square=True,
+    #                    cbar=False,  # ← THIS REMOVES THE COLORBAR
+    #                    cbar_kws={'shrink': 0.8})
             
-            axes[i].set_title(f'{rolling_wd_data.index[0].date()} to {rolling_wd_data.index[-1].date()}')
-            axes[i].tick_params(axis='x', rotation=45)
-            axes[i].tick_params(axis='y', rotation=0)
+    #         # axes[i].set_title(f'{rolling_wd_data.index[0].date()} to {rolling_wd_data.index[-1].date()}')
+    #         # axes[i].tick_params(axis='x', rotation=45)
+    #         # axes[i].tick_params(axis='y', rotation=0)
     
-    plt.suptitle(f'Evolution of Stablecoin Correlations ({window}-Day Rolling)', fontsize=16, y=1.05)
-    plt.tight_layout()
-    plt.show()
+    # plt.suptitle(f'Evolution of Stablecoin Correlations ({window}-Day Rolling)', fontsize=16, y=1.05)
+    # plt.tight_layout()
+    # plt.savefig(f'./figs/corr.png')
+    # # plt.show()
     
     corr_change = pd.DataFrame(corr_change, index=dates, columns=['corr_change'])
     # print(corr_change)
@@ -302,11 +306,70 @@ def correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7):
     plt.tight_layout()
     plt.show()
 
+def realized_volatility(returns_df, window=7, annualize=True):
+    """Standard realized volatility"""
+    rv = returns_df.rolling(window).std()
+    if annualize:
+        rv = rv * np.sqrt(252)
+    
+    plt.figure(figsize=(12, 6))
+    plt.plot(rv.index, rv, 
+             linewidth=2, label='Standard Volatility')
+    plt.title('Standard Volatility over Time')
+    plt.xlabel('Date')
+    plt.legend()
+    plt.grid(True)
+    # plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    return rv
 
+def negative_news_ratio(df_events, returns_df, window = 7):
+    # Select key dates
+    start_date = returns_df.index[window - 1]
+    end_date = returns_df.index[-1]
+    
+    # Create weekly intervals
+    dates = pd.date_range(start=start_date , end=end_date)
+    nega_ratio = []
+    
+    for current_date in dates:
+        # Get events in the past 7 days (inclusive)
+        window_start = current_date - pd.Timedelta(days=window-1)  # 7-day window
+        window_events = df_events[(df_events['datetime'] >= window_start) & 
+                          (df_events['datetime'] <= current_date)]
+        
+        total = len(window_events)
+        negative = (window_events['type'] == 'negative').sum()
+        ratio = negative / total if total > 0 else 0
+        
+        nega_ratio.append({
+            'date': current_date,
+            f'total_events_{window}d': total,
+            f'negative_events_{window}d': negative,
+            f'negative_ratio_{window}d': ratio
+        })
+    # Convert to DataFrame
+    nega_ratio_df = pd.DataFrame(nega_ratio, columns=['date', f'total_events_{window}d',
+                                                       f'negative_events_{window}d', 
+                                                       f'negative_ratio_{window}d'])
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(nega_ratio_df['date'], nega_ratio_df[f'negative_ratio_{window}d'], 
+             linewidth=2, label=f'negative_ratio_{window}d')
+    plt.title('Negative News Ratio over Time')
+    plt.xlabel('Date')
+    plt.legend()
+    # plt.grid(True)
+    # plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    
+    return nega_ratio_df
 # Create correlation timeline
 correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7)
-
-
+realized_volatility(returns_df, window=7)
+nega_ratio_df = negative_news_ratio(df_events, returns_df, window=7)
 
 
 
