@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
 ############# Part 1. Data Loading
 #############
 # load event data - csv
@@ -228,7 +229,8 @@ pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close'
 returns_df = np.log(pivot_df / pivot_df.shift(1)).dropna()
 print("\nDaily Log Returns:")
 print(returns_df.head())
-returns_df = returns_df.drop('wluna', axis=1)
+# returns_df = returns_df.drop('wluna', axis=1)
+
 # # 2. Calculate the correlation matrix
 # corr_matrix = returns_df.corr(method='pearson')
 
@@ -366,10 +368,152 @@ def negative_news_ratio(df_events, returns_df, window = 7):
     plt.show()
     
     return nega_ratio_df
+
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+def pca_timeline(returns_df, frequency_days=180, window=7, n_components = 3):
+    """
+    Create a series of correlation heatmaps/matrice over time.
+    window:     the look-back period when calculating correlation matrix of stablecoin returns;
+                the longer, the slower to reflect latest market move; the shorter, the more fluctuation in correlation structure
+    frequency_days:     the frequency we report the changes in two adjacent correlation matrice.
+
+    Specialized PCA analysis for stablecoin correlations.
+    """
+    # Standardize unless otherwise stated
+    scaler = StandardScaler()
+    returns_df_scaled = scaler.fit_transform(returns_df)  # Zero mean, unit variance
+    
+    # Perform PCA
+    pca = PCA(n_components=n_components)
+    # Fit PCA
+    X_pca = pca.fit_transform(returns_df_scaled)
+    
+    # Get results
+    explained_variance = pca.explained_variance_
+    explained_variance_ratio = pca.explained_variance_ratio_
+    components = pca.components_  # Shape: (n_components, n_assets)
+    
+    # Create results dictionary
+    results = {
+        'pca': pca,
+        'X_pca': X_pca,
+        'components': components,
+        'explained_variance': explained_variance,
+        'explained_variance_ratio': explained_variance_ratio,
+        'asset_names': returns_df.columns.tolist(),
+        'dates': returns_df.index,
+    }
+    
+    # Create focused visualization
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+    
+    # 1. PC time series (market factor)
+    axes[0, 0].plot(results['dates'], results['X_pca'][:, 0], 
+                   linewidth=2, color='darkblue', label='PC1 (Market Factor)')
+    axes[0, 0].fill_between(results['dates'], results['X_pca'][:, 0], 
+                           alpha=0.3, color='blue')
+    axes[0, 0].set_title('Market Factor (PC1) Over Time')
+    axes[0, 0].set_xlabel('Date')
+    axes[0, 0].set_ylabel('PC1 Value')
+    axes[0, 0].legend()
+    axes[0, 0].grid(True, alpha=0.3)
+    axes[0, 0].tick_params(axis='x', rotation=45)
+    
+    # 2. PC loadings heatmap
+    loadings = results['components'][:min(3, n_components), :]
+    asset_names = results['asset_names']
+    
+    im = axes[0, 1].imshow(loadings, cmap='RdBu_r', aspect='auto')
+    axes[0, 1].set_title('Stablecoin Loadings on Principal Components')
+    axes[0, 1].set_xlabel('Stablecoins')
+    axes[0, 1].set_ylabel('Principal Components')
+    axes[0, 1].set_xticks(range(len(asset_names)))
+    axes[0, 1].set_yticks(range(min(3, n_components)))
+    axes[0, 1].set_xticklabels(asset_names, rotation=45, ha='right')
+    axes[0, 1].set_yticklabels([f'PC{i+1}' for i in range(min(3, n_components))])
+    plt.colorbar(im, ax=axes[0, 1])
+    
+    # 3. PC1 loadings bar chart
+    pc1_loadings = results['components'][0, :]
+    colors = ['green' if x > 0 else 'red' for x in pc1_loadings]
+    
+    axes[1, 0].barh(asset_names, pc1_loadings, color=colors, alpha=0.7)
+    axes[1, 0].axvline(x=0, color='black', linewidth=1)
+    axes[1, 0].set_title('PC1 Loadings (Market Factor Exposure)')
+    axes[1, 0].set_xlabel('Loading Value')
+    axes[1, 0].grid(True, alpha=0.3, axis='x')
+    
+    # Add values to bars
+    for i, (name, loading) in enumerate(zip(asset_names, pc1_loadings)):
+        axes[1, 0].text(loading + (0.01 if loading > 0 else -0.01), i,
+                       f'{loading:.3f}', va='center',
+                       ha='left' if loading > 0 else 'right', fontsize=9)
+    
+    # 4. Cumulative variance explained
+    explained_ratio = results['explained_variance_ratio']
+    cumulative = np.cumsum(explained_ratio)
+    
+    axes[1, 1].bar(range(1, len(explained_ratio) + 1), explained_ratio, 
+                  alpha=0.6, color='steelblue', label='Individual')
+    axes[1, 1].plot(range(1, len(cumulative) + 1), cumulative, 
+                   'ro-', linewidth=2, markersize=6, label='Cumulative')
+    axes[1, 1].set_title('Variance Explained by Principal Components')
+    axes[1, 1].set_xlabel('Principal Component')
+    axes[1, 1].set_ylabel('Variance Explained')
+    axes[1, 1].legend()
+    axes[1, 1].grid(True, alpha=0.3)
+    axes[1, 1].set_ylim(0, 1.1)
+    
+    # Add annotations
+    for i, (indiv, cum) in enumerate(zip(explained_ratio, cumulative), 1):
+        axes[1, 1].text(i, indiv + 0.02, f'{indiv*100:.0f}%', 
+                       ha='center', fontsize=8)
+        if i == len(explained_ratio):
+            axes[1, 1].text(i, cum + 0.02, f'{cum*100:.0f}%', 
+                           ha='center', fontsize=9, fontweight='bold')
+    
+    plt.suptitle(f'Stablecoin PCA Analysis ({returns_df.shape[0]} days)', 
+                fontsize=16, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    plt.show()
+    
+    # Interpretation
+    print("\n" + "="*70)
+    print("STABLECOIN PCA INTERPRETATION")
+    print("="*70)
+    
+    loadings_df = pd.DataFrame(
+        results['components'].T,
+        index=asset_names,
+        columns=[f'PC{i+1}' for i in range(results['components'].shape[0])]
+    )
+    
+    print(f"\nFirst {n_components} PCs explain {explained_ratio[:n_components].sum()*100:.1f}% of variance")
+    
+    print(f"\nPC1 (Market Factor) Loadings:")
+    print(loadings_df['PC1'].sort_values(ascending=False).round(4))
+    
+    print(f"\nAssets most correlated with market (|PC1| > 0.3):")
+    high_corr = loadings_df['PC1'][abs(loadings_df['PC1']) > 0.3]
+    if len(high_corr) > 0:
+        print(high_corr.sort_values(ascending=False).round(4))
+    else:
+        print("None")
+    
+    return {
+        'loadings_df': loadings_df,
+        'pc_series': pd.DataFrame(results['X_pca'], index=results['dates'],
+                                 columns=[f'PC{i+1}' for i in range(results['X_pca'].shape[1])]),
+        'explained_variance_ratio': explained_ratio
+    }
+
+
 # Create correlation timeline
 correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7)
 realized_volatility(returns_df, window=7)
 nega_ratio_df = negative_news_ratio(df_events, returns_df, window=7)
+results_pca = pca_timeline(returns_df['2022-05-03':'2022-10-30'] , frequency_days=180, window=7, n_components = 3)
 
 
 
