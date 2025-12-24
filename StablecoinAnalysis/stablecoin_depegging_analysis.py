@@ -455,18 +455,6 @@ def pca_timeline(df, n_components = 3):
 nega_ratio_df = negative_news_ratio(df_events, returns_df, window=7)
 results_pca = pca_timeline(df=pivot_df['2022-04-03':'2022-06-30'] , n_components = 3)
 
-
-
-# 3. Generate a heatmap of the correlation matrix
-plt.figure(figsize=(10, 8))
-sns.heatmap(corr_matrix, annot=True, fmt=".4f", cmap='coolwarm',
-            cbar_kws={'label': 'Pearson Correlation Coefficient (ρ)'},
-            linewidths=.5, linecolor='black')
-plt.title('Correlation Matrix of Stablecoin/Asset Daily close Prices')
-plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
-plt.tight_layout()
-plt.show()
 ######################
 ############################### Plots Done
 
