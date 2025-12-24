@@ -225,29 +225,50 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 import seaborn as sns
 # 1. Pivot the data to get stablecoins as columns and date as index
 pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close')
-# 1. Calculate Returns (log returns are better for correlation analysis)
-returns_df = np.log(pivot_df / pivot_df.shift(1)).dropna()
-print("\nDaily Log Returns:")
-print(returns_df.head())
-# returns_df = returns_df.drop('wluna', axis=1)
+# # 1. Calculate Returns (log returns are better for correlation analysis)
+# returns_df = np.log(pivot_df / pivot_df.shift(1)).dropna()
+# print("\nDaily Log Returns:")
+# print(returns_df.head())
+# # returns_df = returns_df.drop('wluna', axis=1)
 
-def realized_volatility(returns_df, window=7, annualize=True):
-    """Standard realized volatility"""
-    rv = returns_df.rolling(window).std()
-    if annualize:
-        rv = rv * np.sqrt(252)
-    
-    plt.figure(figsize=(12, 6))
-    plt.plot(rv.index, rv, 
-             linewidth=2, label='Standard Volatility')
-    plt.title('Standard Volatility over Time')
-    plt.xlabel('Date')
-    plt.legend()
-    plt.grid(True)
-    # plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-    return rv
+# # Step : Feature Engineering - adding technical indicators
+# pivot_df['MA_20'] = pivot_df['Close'].rolling(window=20).mean()
+# pivot_df['MA_50'] = pivot_df['Close'].rolling(window=50).mean()
+# pivot_df['Volatility'] = pivot_df['Close'].rolling(window=20).std()
+# pivot_df.dropna(inplace=True)
+# # Step 4: Data Preprocessing - Scaling the data
+# features = pivot_df[['Close', 'MA_20', 'MA_50', 'Volatility']]
+# scaler = StandardScaler()
+# scaled_features = scaler.fit_transform(features)
+# # Step 5: Apply PCA
+# pca = PCA(n_components=2)  # Retaining 2 components
+# principal_components = pca.fit_transform(scaled_features)
+# # Step 6: Visualizing Explained Variance
+# explained_variance = pca.explained_variance_ratio_
+# plt.bar(range(len(explained_variance)), explained_variance)
+# plt.title('Explained Variance by Principal Components')
+# plt.show()
+# # Step 7: Building the Predictive Model
+# X = principal_components
+# y = pivot_df['Close']  # Using 'Close' price as the target
+# # Splitting the data into training and testing sets
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# # Using Linear Regression for simplicity
+# model = LinearRegression()
+# model.fit(X_train, y_train)
+# # Step 8: Evaluating the Model
+# y_pred = model.predict(X_test)
+# mse = mean_squared_error(y_test, y_pred)
+# print(f'Mean Squared Error: {mse}')
+# # Step 9: Performance Comparison - Model without PCA
+# model_no_pca = LinearRegression()
+# model_no_pca.fit(X_train, y_train)
+# y_pred_no_pca = model_no_pca.predict(X_test)
+# mse_no_pca = mean_squared_error(y_test, y_pred_no_pca)
+# print(f'MSE without PCA: {mse_no_pca}')
+# # Step 10: Compare the Results
+# print(f'Performance with PCA: {mse}')
+# print(f'Performance without PCA: {mse_no_pca}')
 
 def negative_news_ratio(df_events, returns_df, window = 7):
     # Select key dates
@@ -294,7 +315,7 @@ def negative_news_ratio(df_events, returns_df, window = 7):
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-def pca_timeline(returns_df, frequency_days=180, window=7, n_components = 3):
+def pca_timeline(df, n_components = 3):
     """
     Create a series of correlation heatmaps/matrice over time.
     window:     the look-back period when calculating correlation matrix of stablecoin returns;
@@ -305,12 +326,12 @@ def pca_timeline(returns_df, frequency_days=180, window=7, n_components = 3):
     """
     # Standardize unless otherwise stated
     scaler = StandardScaler()
-    returns_df_scaled = scaler.fit_transform(returns_df)  # Zero mean, unit variance
+    df_scaled = scaler.fit_transform(df)  # Zero mean, unit variance
     
     # Perform PCA
     pca = PCA(n_components=n_components)
     # Fit PCA
-    X_pca = pca.fit_transform(returns_df_scaled)
+    X_pca = pca.fit_transform(df_scaled)
     
     # Get results
     explained_variance = pca.explained_variance_
@@ -324,8 +345,8 @@ def pca_timeline(returns_df, frequency_days=180, window=7, n_components = 3):
         'components': components,
         'explained_variance': explained_variance,
         'explained_variance_ratio': explained_variance_ratio,
-        'asset_names': returns_df.columns.tolist(),
-        'dates': returns_df.index,
+        'asset_names': df.columns.tolist(),
+        'dates': df.index,
     }
     
     # Create focused visualization
@@ -396,7 +417,7 @@ def pca_timeline(returns_df, frequency_days=180, window=7, n_components = 3):
             axes[1, 1].text(i, cum + 0.02, f'{cum*100:.0f}%', 
                            ha='center', fontsize=9, fontweight='bold')
     
-    plt.suptitle(f'Stablecoin PCA Analysis ({returns_df.shape[0]} days)', 
+    plt.suptitle(f'Stablecoin PCA Analysis ({df.shape[0]} days)', 
                 fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
     plt.show()
@@ -431,9 +452,8 @@ def pca_timeline(returns_df, frequency_days=180, window=7, n_components = 3):
         'explained_variance_ratio': explained_ratio
     }
 
-realized_volatility(returns_df, window=7)
 nega_ratio_df = negative_news_ratio(df_events, returns_df, window=7)
-results_pca = pca_timeline(returns_df['2022-05-03':'2022-10-30'] , frequency_days=180, window=7, n_components = 3)
+results_pca = pca_timeline(df=pivot_df['2022-04-03':'2022-06-30'] , n_components = 3)
 
 
 
