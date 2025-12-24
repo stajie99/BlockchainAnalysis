@@ -231,83 +231,6 @@ print("\nDaily Log Returns:")
 print(returns_df.head())
 # returns_df = returns_df.drop('wluna', axis=1)
 
-# # 2. Calculate the correlation matrix
-# corr_matrix = returns_df.corr(method='pearson')
-
-def correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7):
-    """
-    Create a series of correlation heatmaps/matrice over time.
-    window:     the look-back period when calculating correlation matrix of stablecoin returns;
-                the longer, the slower to reflect latest market move; the shorter, the more fluctuation in correlation structure
-    frequency_days:     the frequency we report the changes in two adjacent correlation matrice.
-    """
-    # Select key dates
-    start_date = returns_df.index[window - 1]
-    end_date = returns_df.index[-1]
-    
-    # Create weekly intervals
-    dates = pd.date_range(start=start_date , end=end_date, freq=f'{frequency_days}D')
-    
-    
-    corr_change = []
-    # corr_ = np.zeros((len(returns_df.columns), len(returns_df.columns)))   
-    corr_ = returns_df.iloc[0:window].corr(method='pearson').fillna(0)
-
-    # fig, axes = plt.subplots(2, int(np.ceil(len(dates)/2)), figsize=(20, 5))
-    # # fig, axes = plt.subplots(3, 5, figsize=(20, 5))
-    # # Flatten axes for easy iteration
-    # axes_flat = axes.flatten()
-    for i, date in enumerate(dates):  
-        print(date)
-        if date in returns_df.index:
-            idx = returns_df.index.get_loc(date)
-            start_idx = max(0, idx - window)
-            rolling_wd_data = returns_df.iloc[start_idx:idx]
-
-            corr_matrix = rolling_wd_data.corr(method='pearson').fillna(0) # Pearson correlation matrix
-            diff_corr = corr_matrix #- corr_ 
-            corr_change.append(round(np.linalg.norm(diff_corr, 'fro'), 4)) # magnititude change of correlation matrix - Frobenius norm
-            # Convert np.float64 to regular floats if needed
-            corr_change = [float(x) for x in corr_change] 
-            # corr_ = corr_matrix
-            
-    #         # Plot heatmap
-    #         sns.heatmap(corr_matrix, 
-    #                    ax=axes_flat[i],  # Use flattened array
-    #                    annot=True, 
-    #                    fmt='.2f',
-    #                    cmap='RdBu_r',
-    #                    center=0,
-    #                    vmin=-1, vmax=1,
-    #                    square=True,
-    #                    cbar=False,  # ← THIS REMOVES THE COLORBAR
-    #                    cbar_kws={'shrink': 0.8})
-            
-    #         # axes[i].set_title(f'{rolling_wd_data.index[0].date()} to {rolling_wd_data.index[-1].date()}')
-    #         # axes[i].tick_params(axis='x', rotation=45)
-    #         # axes[i].tick_params(axis='y', rotation=0)
-    
-    # plt.suptitle(f'Evolution of Stablecoin Correlations ({window}-Day Rolling)', fontsize=16, y=1.05)
-    # plt.tight_layout()
-    # plt.savefig(f'./figs/corr.png')
-    # # plt.show()
-    
-    corr_change = pd.DataFrame(corr_change, index=dates, columns=['corr_change'])
-    # print(corr_change)
-    # print(dates)
-    
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(corr_change.index, corr_change['corr_change'], 
-             linewidth=2, label='Correlation Change')
-    plt.title('Magnitude of Change in Correlation over Time')
-    plt.xlabel('Date')
-    plt.legend()
-    plt.grid(True)
-    # plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-
 def realized_volatility(returns_df, window=7, annualize=True):
     """Standard realized volatility"""
     rv = returns_df.rolling(window).std()
@@ -508,9 +431,6 @@ def pca_timeline(returns_df, frequency_days=180, window=7, n_components = 3):
         'explained_variance_ratio': explained_ratio
     }
 
-
-# Create correlation timeline
-correlation_heatmap_change_timeline(returns_df, frequency_days=1, window=7)
 realized_volatility(returns_df, window=7)
 nega_ratio_df = negative_news_ratio(df_events, returns_df, window=7)
 results_pca = pca_timeline(returns_df['2022-05-03':'2022-10-30'] , frequency_days=180, window=7, n_components = 3)
