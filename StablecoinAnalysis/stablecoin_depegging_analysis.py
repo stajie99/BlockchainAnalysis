@@ -96,7 +96,7 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 # plt.xticks(rotation=45)
 # plt.tight_layout()
 # plt.yscale('log') # Use log scale to visualize both stable coins and the collapse of WLUNA/USTC
-# # plt.ylim(1e-5, 150) # Set reasonable limits for log scale
+# # plt.ylim(1e-5, 200) # Set reasonable limits for log scale
 # plt.show()
 
 
@@ -177,7 +177,7 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 #     ax.axvline(x=event['datetime'], color='red', linestyle='--', alpha=0.5)
 #     ax.text(event['datetime'], 
 #             10**( 2 - i * (2 - (-4)) / df_events.shape[0]),
-#             f"$\mathbf{{Event\ {i+1}}}$: {event['event'][:30] + "..."}", 
+#             f"$\mathbf{{Event\ {i+1}}}$: {event['event'][:20] + "..."}", 
 #             rotation=0, fontsize=7)
 
 # ax.set_title('Prices of Stablecoins and WLUNA with Events')
@@ -221,54 +221,89 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 
 
 
-# Correlation analysis
+# PCA 
 import seaborn as sns
 # 1. Pivot the data to get stablecoins as columns and date as index
 pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close')
-# # 1. Calculate Returns (log returns are better for correlation analysis)
-# returns_df = np.log(pivot_df / pivot_df.shift(1)).dropna()
-# print("\nDaily Log Returns:")
-# print(returns_df.head())
-# # returns_df = returns_df.drop('wluna', axis=1)
 
-# # Step : Feature Engineering - adding technical indicators
-# pivot_df['MA_20'] = pivot_df['Close'].rolling(window=20).mean()
-# pivot_df['MA_50'] = pivot_df['Close'].rolling(window=50).mean()
-# pivot_df['Volatility'] = pivot_df['Close'].rolling(window=20).std()
-# pivot_df.dropna(inplace=True)
-# # Step 4: Data Preprocessing - Scaling the data
-# features = pivot_df[['Close', 'MA_20', 'MA_50', 'Volatility']]
-# scaler = StandardScaler()
-# scaled_features = scaler.fit_transform(features)
-# # Step 5: Apply PCA
-# pca = PCA(n_components=2)  # Retaining 2 components
-# principal_components = pca.fit_transform(scaled_features)
-# # Step 6: Visualizing Explained Variance
-# explained_variance = pca.explained_variance_ratio_
-# plt.bar(range(len(explained_variance)), explained_variance)
-# plt.title('Explained Variance by Principal Components')
-# plt.show()
-# # Step 7: Building the Predictive Model
-# X = principal_components
-# y = pivot_df['Close']  # Using 'Close' price as the target
-# # Splitting the data into training and testing sets
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-# # Using Linear Regression for simplicity
-# model = LinearRegression()
-# model.fit(X_train, y_train)
-# # Step 8: Evaluating the Model
-# y_pred = model.predict(X_test)
-# mse = mean_squared_error(y_test, y_pred)
-# print(f'Mean Squared Error: {mse}')
-# # Step 9: Performance Comparison - Model without PCA
-# model_no_pca = LinearRegression()
-# model_no_pca.fit(X_train, y_train)
-# y_pred_no_pca = model_no_pca.predict(X_test)
-# mse_no_pca = mean_squared_error(y_test, y_pred_no_pca)
-# print(f'MSE without PCA: {mse_no_pca}')
-# # Step 10: Compare the Results
-# print(f'Performance with PCA: {mse}')
-# print(f'Performance without PCA: {mse_no_pca}')
+for coin in pivot_df.columns:
+    # 10-day moving average for each stablecoin
+    pivot_df[f'{coin}_MA_10'] = pivot_df[coin].rolling(window=10).mean()
+    # 20-day moving average for each stablecoin  
+    pivot_df[f'{coin}_MA_20'] = pivot_df[coin].rolling(window=20).mean()
+    # 20-day volatility (standard deviation) for each stablecoin
+    pivot_df[f'{coin}_Vol_20'] = pivot_df[coin].rolling(window=20).std()
+    # # You might also want annualized volatility (assuming daily data)
+    # pivot_df[f'{coin}_Volatility_20_annualized'] = pivot_df[coin].rolling(window=20).std() * np.sqrt(252)
+
+pivot_df.dropna(inplace=True)
+
+
+# Set up the plotting style
+plt.style.use('seaborn-v0_8-darkgrid')
+sns.set_palette("husl")
+# Create individual plots for each stablecoin
+for coin in pivot_df.columns:
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+    fig.suptitle(f'{coin.upper()} Analysis', fontsize=16, fontweight='bold')
+    
+    # Plot 1: Price and Moving Averages
+    axes[0].plot(pivot_df.index, pivot_df[coin], label=f'{coin.upper()} Price', alpha=0.7, linewidth=1.5)
+    axes[0].plot(pivot_df.index, pivot_df[f'{coin}_MA_10'], label='10-day MA', linewidth=2, color='orange')
+    axes[0].plot(pivot_df.index, pivot_df[f'{coin}_MA_20'], label='20-day MA', linewidth=2, color='red')
+    axes[0].set_ylabel('Price')
+    axes[0].set_title(f'{coin.upper()} Price with Moving Averages')
+    axes[0].legend(loc='upper left')
+    axes[0].grid(True, alpha=0.3)
+    
+    # Plot 2: Volatility
+    axes[1].plot(pivot_df.index, pivot_df[f'{coin}_Vol_20'], label='20-day Volatility', 
+                 linewidth=2, color='purple')
+    axes[1].fill_between(pivot_df.index, 0, pivot_df[f'{coin}_Vol_20'], 
+                         alpha=0.3, color='purple')
+    axes[1].set_ylabel('Volatility')
+    axes[1].set_title(f'{coin.upper()} 20-day Rolling Volatility')
+    axes[1].legend(loc='upper left')
+    axes[1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+
+
+# Step 4: Data Preprocessing - Scaling the data
+features = pivot_df[['Close', 'MA_10', 'MA_20', 'Volatility']]
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(features)
+# Step 5: Apply PCA
+pca = PCA(n_components=2)  # Retaining 2 components
+principal_components = pca.fit_transform(scaled_features)
+# Step 6: Visualizing Explained Variance
+explained_variance = pca.explained_variance_ratio_
+plt.bar(range(len(explained_variance)), explained_variance)
+plt.title('Explained Variance by Principal Components')
+plt.show()
+# Step 7: Building the Predictive Model
+X = principal_components
+y = pivot_df['Close']  # Using 'Close' price as the target
+# Splitting the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Using Linear Regression for simplicity
+model = LinearRegression()
+model.fit(X_train, y_train)
+# Step 8: Evaluating the Model
+y_pred = model.predict(X_test)
+mse = mean_squared_error(y_test, y_pred)
+print(f'Mean Squared Error: {mse}')
+# Step 9: Performance Comparison - Model without PCA
+model_no_pca = LinearRegression()
+model_no_pca.fit(X_train, y_train)
+y_pred_no_pca = model_no_pca.predict(X_test)
+mse_no_pca = mean_squared_error(y_test, y_pred_no_pca)
+print(f'MSE without PCA: {mse_no_pca}')
+# Step 10: Compare the Results
+print(f'Performance with PCA: {mse}')
+print(f'Performance without PCA: {mse_no_pca}')
 
 def negative_news_ratio(df_events, returns_df, window = 7):
     # Select key dates
@@ -350,7 +385,7 @@ def pca_timeline(df, n_components = 3):
     }
     
     # Create focused visualization
-    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(20, 10))
     
     # 1. PC time series (market factor)
     axes[0, 0].plot(results['dates'], results['X_pca'][:, 0], 
@@ -453,7 +488,7 @@ def pca_timeline(df, n_components = 3):
     }
 
 nega_ratio_df = negative_news_ratio(df_events, returns_df, window=7)
-results_pca = pca_timeline(df=pivot_df['2022-04-03':'2022-06-30'] , n_components = 3)
+results_pca = pca_timeline(df=pivot_df['2022-04-03':'2022-06-20'] , n_components = 3)
 
 ######################
 ############################### Plots Done
@@ -586,9 +621,9 @@ test_r2 = r2_score(y_test, y_test_pred)
 
 # Print metrics comparison
 print("MODEL EVALUATION METRICS")
-print(f"{'Metric':<20} {'Training':<15} {'Testing':<15}")
-print(f"{'R-squared':<20} {train_r2:<15.4f} {test_r2:<15.4f}")
-print(f"{'MSE':<20} {train_mse:<15.4f} {test_mse:<15.4f}")
+print(f"{'Metric':<20} {'Training':<20} {'Testing':<20}")
+print(f"{'R-squared':<20} {train_r2:<20.4f} {test_r2:<20.4f}")
+print(f"{'MSE':<20} {train_mse:<20.4f} {test_mse:<20.4f}")
 
 # Check for overfitting
 overfit_r2 = train_r2 - test_r2
