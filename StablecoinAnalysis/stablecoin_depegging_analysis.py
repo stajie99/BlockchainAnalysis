@@ -221,11 +221,12 @@ df_price = df_price.sort_values(by=['datetime', 'stablecoin']) # ensure chronolo
 
 
 
-# PCA 
+
 import seaborn as sns
 # 1. Pivot the data to get stablecoins as columns and date as index
 pivot_df = df_price.pivot(index='datetime', columns='stablecoin', values='close')
 
+# MA_10, MA_20 and VOL_20
 for coin in pivot_df.columns:
     # 10-day moving average for each stablecoin
     pivot_df[f'{coin}_MA_10'] = pivot_df[coin].rolling(window=10).mean()
@@ -238,126 +239,181 @@ for coin in pivot_df.columns:
 
 pivot_df.dropna(inplace=True)
 
+# # Original Prices, MA_10, MA_20, VOL_20 of each stablecoin in separated figures
+# # Set up the plotting style
+# plt.style.use('seaborn-v0_8-darkgrid')
+# sns.set_palette("husl")
+# # Create individual plots for each stablecoin
+# for coin in pivot_df.columns:
+#     fig, axes = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+#     fig.suptitle(f'{coin.upper()} Analysis', fontsize=16, fontweight='bold')
+    
+#     # Plot 1: Price and Moving Averages
+#     axes[0].plot(pivot_df.index, pivot_df[coin], label=f'{coin.upper()} Price', alpha=0.7, linewidth=1.5)
+#     axes[0].plot(pivot_df.index, pivot_df[f'{coin}_MA_10'], label='10-day MA', linewidth=2, color='orange')
+#     axes[0].plot(pivot_df.index, pivot_df[f'{coin}_MA_20'], label='20-day MA', linewidth=2, color='red')
+#     axes[0].set_ylabel('Price')
+#     axes[0].set_title(f'{coin.upper()} Price with Moving Averages')
+#     axes[0].legend(loc='upper left')
+#     axes[0].grid(True, alpha=0.3)
+    
+#     # Plot 2: Volatility
+#     axes[1].plot(pivot_df.index, pivot_df[f'{coin}_Vol_20'], label='20-day Volatility', 
+#                  linewidth=2, color='purple')
+#     axes[1].fill_between(pivot_df.index, 0, pivot_df[f'{coin}_Vol_20'], 
+#                          alpha=0.3, color='purple')
+#     axes[1].set_ylabel('Volatility')
+#     axes[1].set_title(f'{coin.upper()} 20-day Rolling Volatility')
+#     axes[1].legend(loc='upper left')
+#     axes[1].grid(True, alpha=0.3)
+    
+#     plt.tight_layout()
+#     plt.show()
 
+
+
+# Original Prices, MA_10, MA_20, VOL_20 of each stablecoin in one figure
 # Set up the plotting style
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
-# Create individual plots for each stablecoin
-for coin in pivot_df.columns:
-    fig, axes = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
-    fig.suptitle(f'{coin.upper()} Analysis', fontsize=16, fontweight='bold')
-    
-    # Plot 1: Price and Moving Averages
-    axes[0].plot(pivot_df.index, pivot_df[coin], label=f'{coin.upper()} Price', alpha=0.7, linewidth=1.5)
-    axes[0].plot(pivot_df.index, pivot_df[f'{coin}_MA_10'], label='10-day MA', linewidth=2, color='orange')
-    axes[0].plot(pivot_df.index, pivot_df[f'{coin}_MA_20'], label='20-day MA', linewidth=2, color='red')
-    axes[0].set_ylabel('Price')
-    axes[0].set_title(f'{coin.upper()} Price with Moving Averages')
-    axes[0].legend(loc='upper left')
-    axes[0].grid(True, alpha=0.3)
-    
-    # Plot 2: Volatility
-    axes[1].plot(pivot_df.index, pivot_df[f'{coin}_Vol_20'], label='20-day Volatility', 
-                 linewidth=2, color='purple')
-    axes[1].fill_between(pivot_df.index, 0, pivot_df[f'{coin}_Vol_20'], 
-                         alpha=0.3, color='purple')
-    axes[1].set_ylabel('Volatility')
-    axes[1].set_title(f'{coin.upper()} 20-day Rolling Volatility')
-    axes[1].legend(loc='upper left')
-    axes[1].grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.show()
 
+# Get the original stablecoin names (not the calculated columns)
+original_coins = ['dai', 'pax', 'usdc', 'usdt', 'ustc', 'wluna']
 
+# FIGURE 3: Individual MA and Volatility for each stablecoin (3x2 grid)
+fig3, axes3 = plt.subplots(3, 2, figsize=(18, 15), sharex=True)
+fig3.suptitle('Technical Indicators by Stablecoin', fontsize=18, fontweight='bold')
 
-# Step 4: Data Preprocessing - Scaling the data
-features = pivot_df[['Close', 'MA_10', 'MA_20', 'Volatility']]
-scaler = StandardScaler()
-scaled_features = scaler.fit_transform(features)
-# Step 5: Apply PCA
-pca = PCA(n_components=2)  # Retaining 2 components
-principal_components = pca.fit_transform(scaled_features)
-# Step 6: Visualizing Explained Variance
-explained_variance = pca.explained_variance_ratio_
-plt.bar(range(len(explained_variance)), explained_variance)
-plt.title('Explained Variance by Principal Components')
+for idx, coin in enumerate(original_coins):
+    row = idx // 2
+    col = idx % 2
+    
+    ax = axes3[row, col]
+    
+    # Plot price and MAs
+    ax.plot(pivot_df.index, pivot_df[coin], label='Price', color='blue', alpha=0.7, linewidth=1)
+    ax.plot(pivot_df.index, pivot_df[f'{coin}_MA_10'], label='10-day MA', color='orange', linewidth=1.5)
+    ax.plot(pivot_df.index, pivot_df[f'{coin}_MA_20'], label='20-day MA', color='red', linewidth=1.5)
+    
+    # Create a second y-axis for volatility
+    ax2 = ax.twinx()
+    ax2.plot(pivot_df.index, pivot_df[f'{coin}_Vol_20'], label='20-day Vol', 
+             color='purple', alpha=0.7, linewidth=1, linestyle='--')
+    
+    ax.set_title(f'{coin.upper()}', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Price', fontsize=10)
+    ax2.set_ylabel('Volatility', fontsize=10, color='purple')
+    ax2.tick_params(axis='y', labelcolor='purple')
+    
+    # Combine legends
+    lines1, labels1 = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=8)
+    
+    ax.grid(True, alpha=0.3)
+    
+    # Rotate x-axis labels for bottom row
+    if row == 2:
+        ax.tick_params(axis='x', rotation=45)
+
+plt.tight_layout()
 plt.show()
-# Step 7: Building the Predictive Model
-X = principal_components
-y = pivot_df['Close']  # Using 'Close' price as the target
-# Splitting the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-# Using Linear Regression for simplicity
-model = LinearRegression()
-model.fit(X_train, y_train)
-# Step 8: Evaluating the Model
-y_pred = model.predict(X_test)
-mse = mean_squared_error(y_test, y_pred)
-print(f'Mean Squared Error: {mse}')
-# Step 9: Performance Comparison - Model without PCA
-model_no_pca = LinearRegression()
-model_no_pca.fit(X_train, y_train)
-y_pred_no_pca = model_no_pca.predict(X_test)
-mse_no_pca = mean_squared_error(y_test, y_pred_no_pca)
-print(f'MSE without PCA: {mse_no_pca}')
-# Step 10: Compare the Results
-print(f'Performance with PCA: {mse}')
-print(f'Performance without PCA: {mse_no_pca}')
 
-def negative_news_ratio(df_events, returns_df, window = 7):
-    # Select key dates
-    start_date = returns_df.index[window - 1]
-    end_date = returns_df.index[-1]
-    
-    # Create weekly intervals
-    dates = pd.date_range(start=start_date , end=end_date)
-    nega_ratio = []
-    
-    for current_date in dates:
-        # Get events in the past 7 days (inclusive)
-        window_start = current_date - pd.Timedelta(days=window-1)  # 7-day window
-        window_events = df_events[(df_events['datetime'] >= window_start) & 
-                          (df_events['datetime'] <= current_date)]
-        
-        total = len(window_events)
-        negative = (window_events['type'] == 'negative').sum()
-        ratio = negative / total if total > 0 else 0
-        
-        nega_ratio.append({
-            'date': current_date,
-            f'total_events_{window}d': total,
-            f'negative_events_{window}d': negative,
-            f'negative_ratio_{window}d': ratio
-        })
-    # Convert to DataFrame
-    nega_ratio_df = pd.DataFrame(nega_ratio, columns=['date', f'total_events_{window}d',
-                                                       f'negative_events_{window}d', 
-                                                       f'negative_ratio_{window}d'])
 
-    plt.figure(figsize=(12, 6))
-    plt.plot(nega_ratio_df['date'], nega_ratio_df[f'negative_ratio_{window}d'], 
-             linewidth=2, label=f'negative_ratio_{window}d')
-    plt.title('Negative News Ratio over Time')
-    plt.xlabel('Date')
-    plt.legend()
-    # plt.grid(True)
-    # plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
+
+
+
+########## PCA used in foreasting prices
+# # Step 4: Data Preprocessing - Scaling the data
+# features = pivot_df[['Close', 'MA_10', 'MA_20', 'Volatility']]
+# scaler = StandardScaler()
+# scaled_features = scaler.fit_transform(features)
+# # Step 5: Apply PCA
+# pca = PCA(n_components=2)  # Retaining 2 components
+# principal_components = pca.fit_transform(scaled_features)
+# # Step 6: Visualizing Explained Variance
+# explained_variance = pca.explained_variance_ratio_
+# plt.bar(range(len(explained_variance)), explained_variance)
+# plt.title('Explained Variance by Principal Components')
+# plt.show()
+# # Step 7: Building the Predictive Model
+# X = principal_components
+# y = pivot_df['Close']  # Using 'Close' price as the target
+# # Splitting the data into training and testing sets
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# # Using Linear Regression for simplicity
+# model = LinearRegression()
+# model.fit(X_train, y_train)
+# # Step 8: Evaluating the Model
+# y_pred = model.predict(X_test)
+# mse = mean_squared_error(y_test, y_pred)
+# print(f'Mean Squared Error: {mse}')
+# # Step 9: Performance Comparison - Model without PCA
+# model_no_pca = LinearRegression()
+# model_no_pca.fit(X_train, y_train)
+# y_pred_no_pca = model_no_pca.predict(X_test)
+# mse_no_pca = mean_squared_error(y_test, y_pred_no_pca)
+# print(f'MSE without PCA: {mse_no_pca}')
+# # Step 10: Compare the Results
+# print(f'Performance with PCA: {mse}')
+# print(f'Performance without PCA: {mse_no_pca}')
+
+
+
+
+# def negative_news_ratio(df_events, returns_df, window = 7):
+#     # Select key dates
+#     start_date = returns_df.index[window - 1]
+#     end_date = returns_df.index[-1]
     
-    return nega_ratio_df
+#     # Create weekly intervals
+#     dates = pd.date_range(start=start_date , end=end_date)
+#     nega_ratio = []
+    
+#     for current_date in dates:
+#         # Get events in the past 7 days (inclusive)
+#         window_start = current_date - pd.Timedelta(days=window-1)  # 7-day window
+#         window_events = df_events[(df_events['datetime'] >= window_start) & 
+#                           (df_events['datetime'] <= current_date)]
+        
+#         total = len(window_events)
+#         negative = (window_events['type'] == 'negative').sum()
+#         ratio = negative / total if total > 0 else 0
+        
+#         nega_ratio.append({
+#             'date': current_date,
+#             f'total_events_{window}d': total,
+#             f'negative_events_{window}d': negative,
+#             f'negative_ratio_{window}d': ratio
+#         })
+#     # Convert to DataFrame
+#     nega_ratio_df = pd.DataFrame(nega_ratio, columns=['date', f'total_events_{window}d',
+#                                                        f'negative_events_{window}d', 
+#                                                        f'negative_ratio_{window}d'])
+
+#     plt.figure(figsize=(12, 6))
+#     plt.plot(nega_ratio_df['date'], nega_ratio_df[f'negative_ratio_{window}d'], 
+#              linewidth=2, label=f'negative_ratio_{window}d')
+#     plt.title('Negative News Ratio over Time')
+#     plt.xlabel('Date')
+#     plt.legend()
+#     # plt.grid(True)
+#     # plt.xticks(rotation=45)
+#     plt.tight_layout()
+#     plt.show()
+    
+#     return nega_ratio_df
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 def pca_timeline(df, n_components = 3):
     """
-    Create a series of correlation heatmaps/matrice over time.
+
     window:     the look-back period when calculating correlation matrix of stablecoin returns;
                 the longer, the slower to reflect latest market move; the shorter, the more fluctuation in correlation structure
     frequency_days:     the frequency we report the changes in two adjacent correlation matrice.
 
-    Specialized PCA analysis for stablecoin correlations.
+    PCA analysis for early warnings 
     """
     # Standardize unless otherwise stated
     scaler = StandardScaler()
@@ -487,8 +543,8 @@ def pca_timeline(df, n_components = 3):
         'explained_variance_ratio': explained_ratio
     }
 
-nega_ratio_df = negative_news_ratio(df_events, returns_df, window=7)
-results_pca = pca_timeline(df=pivot_df['2022-04-03':'2022-06-20'] , n_components = 3)
+# nega_ratio_df = negative_news_ratio(df_events, returns_df, window=7)
+results_pca = pca_timeline(df=pivot_df['2022-04-03':'2022-05-06'] , n_components = 3)
 
 ######################
 ############################### Plots Done
